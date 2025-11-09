@@ -7,6 +7,7 @@ import { GameMongooseModule } from "@modules/databases"
         GameMongooseModule.forRoot({
             isGlobal: true,
             withSeeder: true,
+            loadToMemory: true,
         }),
     ],
 })

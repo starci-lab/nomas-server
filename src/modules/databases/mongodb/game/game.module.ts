@@ -17,11 +17,12 @@ import { Connection } from "mongoose"
 import { envConfig } from "@modules/env"
 import { GameSeedersModule } from "./seeders"
 import { GAME_MONGOOSE_CONNECTION_NAME } from "./constants"
+import { GameMemdbModule } from "./memdb"
 
 @Module({})
 export class GameMongooseModule extends ConfigurableModuleClass {
     public static forRoot(options: typeof OPTIONS_TYPE = {}): DynamicModule {
-        const { withSeeder, manualTrigger } = options
+        const { withSeeder, manualTrigger, loadToMemory, isGlobal } = options
         const dynamicModule = super.forRoot(options)
         const { database, username, password, host, port } = envConfig().mongodb.game
         const url = `mongodb://${username}:${password}@${host}:${port}`
@@ -40,6 +41,12 @@ export class GameMongooseModule extends ConfigurableModuleClass {
         if (withSeeder) {
             imports.push(GameSeedersModule.register({
                 manualTrigger: manualTrigger,
+                isGlobal,
+            }))
+        }
+        if (loadToMemory) {
+            imports.push(GameMemdbModule.register({
+                isGlobal,
             }))
         }
         return {

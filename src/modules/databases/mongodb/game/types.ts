@@ -3,4 +3,6 @@ export interface GameMongoDbOptions {
     withSeeder?: boolean
     // require mannual trigger instead of automatic trigger
     manualTrigger?: boolean
+    // loadToMemory: load static data to memory
+    loadToMemory?: boolean
 }
