@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common"
-import { DeferredPromise } from "p-defer"
+import pDefer, { DeferredPromise } from "p-defer"
 
 export type WatcherState = "pending" | "ready" | "error"
 

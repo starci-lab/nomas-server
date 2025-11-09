@@ -1,7 +1,7 @@
 import { Field, Float, ObjectType } from "@nestjs/graphql"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { AbstractSchema } from "./abstract"
-import { PetId } from "../enums"
+import { GraphQLTypePetId, PetId } from "../enums"
 
 @Schema({ timestamps: true, collection: "pets" })
 @ObjectType({
@@ -9,7 +9,7 @@ import { PetId } from "../enums"
         "Defines the base attributes and configuration of a pet species in the game. Each pet determines its starting stats, stat decay behavior, and income potential.",
 })
 export class PetSchema extends AbstractSchema {
-    @Field(() => PetId, {
+    @Field(() => GraphQLTypePetId, {
         description: "The ID of the pet",
     })
     @Prop({ type: String, enum: PetId, required: true })

@@ -48,4 +48,12 @@ export class MemdbStorageService implements OnModuleInit {
             delay: 1000,
         })
     }
+
+    public getPets(): Array<PetSchema> {
+        return this.pets
+    }
+
+    public getStoreItems(): Array<StoreItemSchema> {
+        return this.storeItems
+    }
 }

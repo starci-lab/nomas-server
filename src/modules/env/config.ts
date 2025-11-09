@@ -9,12 +9,26 @@ export const envConfig = () => ({
         },
     },
     redis: {
-        game: {
-            host: process.env.REDIS_GAME_HOST || "localhost",
-            port: process.env.REDIS_GAME_PORT || 6380,
-            username: process.env.REDIS_GAME_USERNAME || "default",
-            password: process.env.REDIS_GAME_PASSWORD || "Cuong123_A",
-            requirePassword: process.env.REDIS_GAME_REQUIRE_PASSWORD || false,
+        colyseus: {
+            host: process.env.REDIS_COLYSEUS_HOST || "localhost",
+            port: process.env.REDIS_COLYSEUS_PORT ? Number.parseInt(process.env.REDIS_COLYSEUS_PORT) : 6379,
+            username: process.env.REDIS_COLYSEUS_USERNAME || "default",
+            password: process.env.REDIS_COLYSEUS_PASSWORD || "Cuong123_A",
+            requirePassword: process.env.REDIS_COLYSEUS_REQUIRE_PASSWORD === "true",
+        },
+        throttler: {
+            host: process.env.REDIS_THROTTLER_HOST || "localhost",
+            port: process.env.REDIS_THROTTLER_PORT ? Number.parseInt(process.env.REDIS_THROTTLER_PORT) : 6379,
+            username: process.env.REDIS_THROTTLER_USERNAME || "default",
+            password: process.env.REDIS_THROTTLER_PASSWORD || "Cuong123_A",
+            requirePassword: process.env.REDIS_THROTTLER_REQUIRE_PASSWORD === "true",
+        },
+        cache: {
+            host: process.env.REDIS_CACHE_HOST || "localhost",
+            port: process.env.REDIS_CACHE_PORT ? Number.parseInt(process.env.REDIS_CACHE_PORT) : 6379,
+            username: process.env.REDIS_CACHE_USERNAME || "default",
+            password: process.env.REDIS_CACHE_PASSWORD || "Cuong123_A",
+            requirePassword: process.env.REDIS_CACHE_REQUIRE_PASSWORD === "true",
         },
     },
     ports: {

@@ -39,5 +39,8 @@ export abstract class AbstractSchema extends Document {
         default: 0,
         required: true,
     })
+    @Field(() => Number, {
+        description: "The version of the object"
+    })
         version: number
 }

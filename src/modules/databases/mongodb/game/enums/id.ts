@@ -31,7 +31,7 @@ export enum StoreItemId {
     Apple = "Apple",
     Cake = "Cake",
     Coke = "Coke",
-    IceCream = "Ice cream",
+    IceCream = "IceCream",
     Watermelon = "Watermelon",
     Bone = "Bone",
     Daruma = "Daruma",

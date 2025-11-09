@@ -21,7 +21,6 @@ export class LockService {
     private release(key: string) {
         this.locks.delete(key)
     }
-
     /**
    * Execute a callback with locks
    */

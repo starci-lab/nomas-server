@@ -1,7 +1,7 @@
 import { Field, ObjectType, Float } from "@nestjs/graphql"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { AbstractSchema } from "./abstract"
-import { StoreItemId, StoreItemType } from "../enums"
+import { GraphQLTypeStoreItemId, GraphQLTypeStoreItemType, StoreItemId, StoreItemType } from "../enums"
 
 @Schema({ timestamps: true, collection: "store-items" })
 @ObjectType({
@@ -9,7 +9,7 @@ import { StoreItemId, StoreItemType } from "../enums"
         "Represents an item available in the in-game store. Each store item has a specific effect on pet stats or the player's environment.",
 })
 export class StoreItemSchema extends AbstractSchema {
-    @Field(() => StoreItemId, {
+    @Field(() => GraphQLTypeStoreItemId, {
         description: "The ID of the store item",
     })
     @Prop({ type: String, enum: StoreItemId, required: true })
@@ -25,7 +25,7 @@ export class StoreItemSchema extends AbstractSchema {
     })
         name: string
 
-    @Field(() => StoreItemType, {
+    @Field(() => GraphQLTypeStoreItemType, {
         description:
             "The type or category of the store item (e.g., food, toy, clean, furniture, background, pet).",
     })
