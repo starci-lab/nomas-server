@@ -1,0 +1,1 @@
+export const GAME_MONGOOSE_CONNECTION_NAME = "game"
