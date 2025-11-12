@@ -31,6 +31,7 @@ export const envConfig = () => ({
             username: process.env.REDIS_CACHE_USERNAME || "default",
             password: process.env.REDIS_CACHE_PASSWORD || "Cuong123_A",
             requirePassword: process.env.REDIS_CACHE_REQUIRE_PASSWORD === "true",
+            ttl: process.env.REDIS_CACHE_TTL ? Number.parseInt(process.env.REDIS_CACHE_TTL) : 60 * 60 * 24, // 24 hours
         },
     },
     secret: {
@@ -52,5 +53,8 @@ export const envConfig = () => ({
         signature: {
             duration: process.env.AUTH_SIGNATURE_DURATION ? Number.parseInt(process.env.AUTH_SIGNATURE_DURATION) : 60 * 60 * 24, // 24 hours
         },
-    }
+    },
+    loki: {
+        host: process.env.LOKI_HOST || "http://localhost:3100",
+    },
 })

@@ -19,6 +19,15 @@
         "tsConfigPath": "apps/core/tsconfig.app.json"
       }
     },
+    "nomas-colyseus": {
+      "type": "application",
+      "root": "apps/nomas-colyseus",
+      "entryFile": "main",
+      "sourceRoot": "apps/nomas-colyseus/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/nomas-colyseus/tsconfig.app.json"
+      }
+    },
     "nomas-server": {
       "type": "application",
       "root": "apps/nomas-server",
