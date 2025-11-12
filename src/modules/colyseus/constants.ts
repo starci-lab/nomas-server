@@ -1,0 +1,1 @@
+export const COLYSEUS_SERVER = "COLYSEUS_SERVER"

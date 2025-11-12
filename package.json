@@ -22,6 +22,7 @@
   "dependencies": {
     "@aptos-labs/ts-sdk": "^5.1.1",
     "@as-integrations/express5": "^1.1.2",
+    "@colyseus/schema": "^3.0.68",
     "@mysten/sui": "^1.44.0",
     "@nest-lab/throttler-storage-redis": "^1.1.0",
     "@nestjs/apollo": "^13.2.1",
@@ -36,6 +37,8 @@
     "@nestjs/throttler": "^6.4.0",
     "@solana/web3.js": "^1.98.4",
     "class-validator": "^0.14.2",
+    "colyseus": "^0.16.5",
+    "colyseus.js": "^0.16.22",
     "dayjs": "^1.11.19",
     "ethers": "^6.15.0",
     "graphql-type-json": "^0.3.2",

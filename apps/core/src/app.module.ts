@@ -6,6 +6,7 @@ import { EnvModule } from "@modules/env"
 import { ThrottlerModule } from "@modules/throttler"
 import { PassportModule } from "@modules/passport"
 import { BlockchainModule } from "@modules/blockchain"
+import { ColyseusModule } from "@modules/colyseus"
 
 @Module({
     imports: [
@@ -40,6 +41,7 @@ import { BlockchainModule } from "@modules/blockchain"
             },
             isGlobal: true,
         }),
+        ColyseusModule.forRoot(),
     ],
     providers: [
     ],

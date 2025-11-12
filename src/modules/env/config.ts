@@ -38,6 +38,7 @@ export const envConfig = () => ({
     },
     ports: {
         core: process.env.PORT ?? 3000,
+        colyseus: process.env.COLYSEUS_PORT ? Number.parseInt(process.env.COLYSEUS_PORT) : 2567,
     },
     isProduction: process.env.NODE_ENV === "production",
     // mock private keys for testing
