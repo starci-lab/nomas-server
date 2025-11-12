@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common"
-import { VerifyParams } from "./auth.interface"
+import { SignParams, VerifyParams } from "./auth.interface"
 import { ModuleRef } from "@nestjs/core"
 import { AptosAuthService } from "./aptos-auth.service"
 import { SuiAuthService } from "./sui-auth.service"
@@ -32,5 +32,25 @@ export class AuthService {
         default:
             throw new PlatformNotFoundException("Platform not found")
         }   
+    }
+
+    /**
+     * Sign message
+     * @param params - Sign params
+     * @returns Signed message
+     */
+    async sign(params: SignParams) {
+        switch (params.platform) {
+        case Platform.Evm:
+            return this.moduleRef.get(EvmAuthService).sign(params)
+        case Platform.Solana:
+            return this.moduleRef.get(SolanaAuthService).sign()
+        case Platform.Sui:
+            return this.moduleRef.get(SuiAuthService).sign()
+        case Platform.Aptos:
+            return this.moduleRef.get(AptosAuthService).sign()
+        default:
+            throw new PlatformNotFoundException("Platform not found")
+        }
     }
 }

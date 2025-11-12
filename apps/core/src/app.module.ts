@@ -41,5 +41,7 @@ import { BlockchainModule } from "@modules/blockchain"
             isGlobal: true,
         }),
     ],
+    providers: [
+    ],
 })
 export class AppModule {}

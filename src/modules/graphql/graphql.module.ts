@@ -5,6 +5,7 @@ import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo"
 import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default"
 import { GraphQLJSON } from "graphql-type-json"
 import { GameQueriesModule } from "./queries"
+import { GameMutationsModule } from "./mutations"
 
 @Module({})
 export class GraphQLModule extends ConfigurableModuleClass {
@@ -39,6 +40,7 @@ export class GraphQLModule extends ConfigurableModuleClass {
         // register all resolvers
         if (resolvers.game) {
             imports.push(GameQueriesModule.register({}))
+            imports.push(GameMutationsModule.register({}))
         }
         return {
             ...dynamicModule,

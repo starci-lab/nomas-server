@@ -55,3 +55,11 @@ export class SignatureInvalidException extends AbstractException {
         super(message, "SIGNATURE_INVALID_EXCEPTION")
     }
 }
+
+export class MessageInvalidException extends AbstractException {
+    constructor(
+        message: string,
+    ) {
+        super(message, "MESSAGE_INVALID_EXCEPTION")
+    }
+}

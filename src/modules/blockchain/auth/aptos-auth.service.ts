@@ -1,11 +1,15 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { IAuthService, VerifyParams } from "./auth.interface"
+import { IAuthService, SignResponse, VerifyParams } from "./auth.interface"
 import { Ed25519PublicKey, Ed25519Signature } from "@aptos-labs/ts-sdk"
 
 @Injectable()
 export class AptosAuthService implements IAuthService {
     private readonly logger = new Logger(AptosAuthService.name)
     constructor() {}
+
+    sign(): Promise<SignResponse> | SignResponse {
+        throw new Error("Method not implemented.")
+    }
     // verify Aptos signature
     /**
      * Verify Aptos signature

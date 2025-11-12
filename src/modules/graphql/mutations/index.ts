@@ -1,1 +1,1 @@
-export * from "./mutations.module"
+export * from "./game"

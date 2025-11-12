@@ -1,6 +1,6 @@
 import { ObjectType, Field } from "@nestjs/graphql"
 import { PetSchema, StoreItemSchema } from "@modules/databases"
-import { AbstractGraphQLResponse, IAbstractGraphQLResponse } from "../../../abstract"
+import { AbstractGraphQLResponse, IAbstractGraphQLResponse } from "../../../common"
 /**
  * GraphQL response type for the pets query.
  */

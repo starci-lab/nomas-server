@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common"
-import { IAuthService, VerifyParams } from "./auth.interface"
+import { IAuthService, SignParams, SignResponse, VerifyParams } from "./auth.interface"
 import { ethers } from "ethers"
 
 @Injectable()
@@ -22,5 +22,24 @@ export class EvmAuthService implements IAuthService {
         const retrievedAddress = ethers.verifyMessage(message, signature)
         // check if recovered address is the same as the account address
         return retrievedAddress.toLowerCase() === accountAddress.toLowerCase()
+    }
+
+    /**
+     * Sign message
+     * @param params - Sign params
+     * @returns Signed message
+     */
+    async sign({
+        privateKey,
+        message,
+    }: SignParams): Promise<SignResponse> {
+        // sign message
+        const signer = new ethers.Wallet(privateKey)
+        const signature = await signer.signMessage(message)
+        return {
+            signature: signature,
+            publicKey: signer.address,
+            accountAddress: signer.address,
+        }
     }
 }

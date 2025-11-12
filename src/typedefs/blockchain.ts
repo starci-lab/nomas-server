@@ -2,10 +2,10 @@ import { registerEnumType } from "@nestjs/graphql"
 import { createEnumType } from "@utils"
 
 export enum Platform {
-    Evm = "Evm",
-    Solana = "Solana",
-    Sui = "Sui",
-    Aptos = "Aptos",
+    Evm = "evm",
+    Solana = "solana",
+    Sui = "sui",
+    Aptos = "aptos",
 }
 
 export const GraphQLTypePlatform = createEnumType(Platform)

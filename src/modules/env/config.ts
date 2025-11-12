@@ -1,8 +1,10 @@
+import { Platform } from "@typedefs"
+
 export const envConfig = () => ({
     mongodb: {
         game: {
             host: process.env.MONGODB_GAME_HOST || "localhost",
-            port: process.env.MONGODB_GAME_PORT || 27019,
+            port: process.env.MONGODB_GAME_PORT || 27018,
             database: process.env.MONGODB_GAME_DATABASE || "game",
             username: process.env.MONGODB_GAME_USERNAME || "root",
             password: process.env.MONGODB_GAME_PASSWORD || "Cuong123_A",
@@ -31,8 +33,23 @@ export const envConfig = () => ({
             requirePassword: process.env.REDIS_CACHE_REQUIRE_PASSWORD === "true",
         },
     },
+    secret: {
+        jwt: process.env.JWT_SECRET || "secret",
+    },
     ports: {
         core: process.env.PORT ?? 3000,
     },
     isProduction: process.env.NODE_ENV === "production",
+    // mock private keys for testing
+    mockPrivateKeys: {
+        [Platform.Evm]: process.env.MOCK_PRIVATE_KEY_EVM || "b243401a4c59ba95ec01939edbf269e6d78f1c5ac55e7a704705761ca6c56448",
+        [Platform.Solana]: process.env.MOCK_PRIVATE_KEY_SOLANA || "3132333435363738393031323334353637383930313233343536373839303132",
+        [Platform.Sui]: process.env.MOCK_PRIVATE_KEY_SUI || "0x0000000000000000000000000000000000000000000000000000000000000000",
+        [Platform.Aptos]: process.env.MOCK_PRIVATE_KEY_APTOS || "0x0000000000000000000000000000000000000000000000000000000000000000",
+    },
+    auth: {
+        signature: {
+            duration: process.env.AUTH_SIGNATURE_DURATION ? Number.parseInt(process.env.AUTH_SIGNATURE_DURATION) : 60 * 60 * 24, // 24 hours
+        },
+    }
 })

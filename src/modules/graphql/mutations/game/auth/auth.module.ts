@@ -1,7 +1,7 @@
-import { Module } from "@nestjs/common"
+import { Module } from "@nestjs/common"     
+import { ConfigurableModuleClass } from "./auth.module-definition"
 import { AuthResolvers } from "./auth.resolvers"
 import { AuthService } from "./auth.service"
-import { ConfigurableModuleClass } from "./auth.module-definition"
 
 @Module({
     providers: [AuthResolvers, AuthService],

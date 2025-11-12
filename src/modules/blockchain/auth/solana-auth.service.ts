@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { IAuthService, VerifyParams } from "./auth.interface"
+import { IAuthService, SignResponse, VerifyParams } from "./auth.interface"
 import nacl from "tweetnacl"
 import { PublicKey } from "@solana/web3.js"
 import bs58 from "bs58"
@@ -8,6 +8,10 @@ import bs58 from "bs58"
 export class SolanaAuthService implements IAuthService {
     private readonly logger = new Logger(SolanaAuthService.name)
     constructor() {}
+
+    sign(): Promise<SignResponse> | SignResponse {
+        throw new Error("Method not implemented.")
+    }
 
     // verify Solana signature
     /**
