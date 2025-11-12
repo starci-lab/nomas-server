@@ -1,4 +1,3 @@
-
 import { Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { envConfig } from "./config"
@@ -15,9 +14,9 @@ export class EnvModule extends ConfigurableModuleClass {
                     isGlobal: true,
                     //skipProcessEnv: true,
                     load: [envConfig],
-                    envFilePath: [".env.local", ".env.secret"]
-                })
-            ]
+                    envFilePath: [".env.local", ".env.secret"],
+                }),
+            ],
         }
     }
 }
