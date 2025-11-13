@@ -19,6 +19,7 @@ export class ExampleRoom extends Room<State> {
     constructor(app: INestApplication) {
         super()
         this.app = globalThis.__APP__
+        console.log(this.app)
     }
     // initialize empty room state
     state = new State()
