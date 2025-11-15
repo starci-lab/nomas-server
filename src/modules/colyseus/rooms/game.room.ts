@@ -1,7 +1,11 @@
-import { Room, Client } from "colyseus"
-import { INestApplication } from "@nestjs/common"
+import { Client } from "colyseus"
 import { RetryService } from "@modules/mixin"
-import { GameRoomState, Player, Pet } from "@modules/colyseus/schemas/game.schema"
+import { GameRoomState, Pet, Player } from "@modules/colyseus/schemas"
+import { GamePetMessages } from "@modules/game"
+import { PetService } from "@apps/nomas-colyseus/src/gameplay/handlers/pet/pet.message-handlers"
+import { BaseRoom } from "./base.room"
+import { OnMessage, EmitMessage } from "../decorators"
+import { GamePetEvent } from "@modules/game/pet/pet.events"
 
 const ROOM_CONFIG = {
     maxClients: 4,
@@ -14,22 +18,53 @@ interface GameRoomOptions {
     addressWallet?: string
 }
 
-export class GameRoom extends Room<GameRoomState> {
-    private readonly app: INestApplication
+// Message types
+interface BuyPetMessage {
+    petType?: string
+    petTypeId?: string
+    isBuyPet?: boolean
+}
+
+interface RemovePetMessage {
+    petId?: string
+}
+
+interface FeedPetMessage {
+    petId?: string
+    foodType?: string
+}
+
+interface PlayPetMessage {
+    petId?: string
+}
+
+interface FoodConsumedMessage {
+    pet_id?: string
+    hunger_level?: number
+}
+
+interface PlayedPetMessage {
+    pet_id?: string
+    happiness_level?: number
+}
+
+interface CreatePoopMessage {
+    petId?: string
+    positionX?: number
+    positionY?: number
+}
+
+export class GameRoom extends BaseRoom<GameRoomState> {
     private retryService: RetryService | null = null
     private lastStatePersistedAt = 0
+    private petMessages: PetService | null = null
 
     maxClients = ROOM_CONFIG.maxClients
-
-    constructor() {
-        super()
-        this.app = globalThis.__APP__
-    }
 
     async onCreate(options: GameRoomOptions) {
         this.initializeDependencies()
         this.initializeRoom(options)
-        this.registerMessageHandlers()
+        this.registerDecoratedHandlers() // Register decorated handlers
         this.startSimulationLoop()
         await this.bootstrapRoomWithRetry()
     }
@@ -45,7 +80,9 @@ export class GameRoom extends Room<GameRoomState> {
 
         this.syncPlayerPets(player)
         this.sendWelcomeMessage(client, player)
-        console.log(`👋 Player joined: ${player.name} (${client.sessionId}). Total players: ${this.state.playerCount}`)
+        this.logger.debug(
+            `👋 Player joined: ${player.name} (${client.sessionId}). Total players: ${this.state.playerCount}`,
+        )
     }
 
     onLeave(client: Client, consented?: boolean) {
@@ -58,41 +95,116 @@ export class GameRoom extends Room<GameRoomState> {
         this.state.players.delete(client.sessionId)
         this.state.playerCount = this.state.players.size
 
-        console.log(`👋 Player left: ${player.name} (${client.sessionId}). consented=${consented}`)
+        this.logger.debug(`👋 Player left: ${player.name} (${client.sessionId}). consented=${consented}`)
         this.allowReconnection(client, ROOM_CONFIG.reconnectionTime)
     }
 
     onDispose() {
-        console.log("🧹 Disposing GameRoom", this.roomId)
+        this.logger.debug("🧹 Disposing GameRoom", this.roomId)
     }
 
     private initializeDependencies() {
-        this.retryService = this.app.get(RetryService)
+        this.retryService = this.app.get(RetryService, { strict: false })
+        this.petMessages = this.app.get(PetService, { strict: false })
     }
 
     private initializeRoom(options: GameRoomOptions) {
         this.setState(new GameRoomState())
         this.state.roomName = options?.name || "Pet Simulator Room"
-        console.log(`🏠 GameRoom created (${this.roomId})`)
+        this.logger.debug(`🏠 GameRoom created (${this.roomId})`)
     }
 
-    private registerMessageHandlers() {
-        this.onMessage("request_state", (client) => {
-            this.sendStateSnapshot(client)
-        })
+    // Basic room message handlers
+    @OnMessage("request_state")
+    private handleRequestState(client: Client) {
+        this.sendStateSnapshot(client)
+    }
 
-        this.onMessage("update_player_name", (client, message: { name?: string }) => {
-            const player = this.state.players.get(client.sessionId)
-            if (!player || !message?.name) {
-                return
-            }
-            player.name = message.name
-        })
+    @OnMessage("update_player_name")
+    private handleUpdatePlayerName(client: Client, message: { name?: string }) {
+        const player = this.state.players.get(client.sessionId)
+        if (!player || !message?.name) {
+            return
+        }
+        player.name = message.name
+    }
+
+    // Pet message handlers với decorators
+    @OnMessage(GamePetMessages.BUY_PET)
+    @EmitMessage(GamePetEvent.BuyRequested)
+    private handleBuyPet(client: Client, data: BuyPetMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.buyPet(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.REMOVE_PET)
+    @EmitMessage(GamePetEvent.RemoveRequested)
+    private handleRemovePet(client: Client, data: RemovePetMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.removePet(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.FEED_PET)
+    @EmitMessage(GamePetEvent.FeedRequested)
+    private handleFeedPet(client: Client, data: FeedPetMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.feedPet(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.PLAY_WITH_PET)
+    @EmitMessage(GamePetEvent.PlayRequested)
+    private handlePlayWithPet(client: Client, data: PlayPetMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.playWithPet(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.CLEANED_PET)
+    @EmitMessage(GamePetEvent.CleanRequested)
+    private handleCleanedPet(client: Client, data: { petId?: string; cleaningItemId?: string; poopId?: string } = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.cleanedPet(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.PLAYED_PET)
+    @EmitMessage(GamePetEvent.Played)
+    private handlePlayedPet(client: Client, data: PlayedPetMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.playedPet(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.FOOD_CONSUMED)
+    @EmitMessage(GamePetEvent.FoodConsumed)
+    private handleFoodConsumed(client: Client, data: FoodConsumedMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.foodConsumed(this)(client, data)
+    }
+
+    @OnMessage(GamePetMessages.CREATE_POOP)
+    @EmitMessage(GamePetEvent.PoopCreated)
+    private handleCreatePoop(client: Client, data: CreatePoopMessage = {}) {
+        if (!this.petMessages) {
+            return null
+        }
+        return this.petMessages.createPoop(this)(client, data)
     }
 
     private startSimulationLoop() {
         this.setSimulationInterval(() => this.updateGameLogic(), ROOM_CONFIG.updateInterval)
-        console.log("⏱️ Simulation loop started")
+        this.logger.debug("⏱️ Simulation loop started")
     }
 
     private updateGameLogic() {
@@ -103,7 +215,7 @@ export class GameRoom extends Room<GameRoomState> {
         const now = Date.now()
         if (now - this.lastStatePersistedAt >= 60_000) {
             this.lastStatePersistedAt = now
-            console.log("💾 State snapshot persisted (placeholder)")
+            this.logger.debug("💾 State snapshot persisted (placeholder)")
         }
     }
 
@@ -164,9 +276,9 @@ export class GameRoom extends Room<GameRoomState> {
 
         await this.retryService.retry({
             action: async () => {
-                console.log(`🚀 GameRoom ${this.roomId} ready`)
+                this.logger.debug(`🚀 GameRoom ${this.roomId} ready`)
             },
-            maxRetries: 1,
+            maxRetries: 3,
             delay: 100,
         })
     }

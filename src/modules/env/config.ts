@@ -41,17 +41,34 @@ export const envConfig = () => ({
         core: process.env.PORT ?? 3000,
         colyseus: process.env.COLYSEUS_PORT ? Number.parseInt(process.env.COLYSEUS_PORT) : 2567,
     },
+    kafka: {
+        host: process.env.KAFKA_HOST || "localhost",
+        port: process.env.KAFKA_PORT ? Number.parseInt(process.env.KAFKA_PORT) : 9092,
+        clientId: process.env.KAFKA_CLIENT_ID || "kafka",
+        sasl: {
+            mechanism: process.env.KAFKA_SASL_MECHANISM || "plain",
+            username: process.env.KAFKA_SASL_USERNAME || "kafka",
+            password: process.env.KAFKA_SASL_PASSWORD || "Cuong123_A",
+            enabled: process.env.KAFKA_SASL_ENABLED === "true",
+        },
+    },
     isProduction: process.env.NODE_ENV === "production",
     // mock private keys for testing
     mockPrivateKeys: {
-        [Platform.Evm]: process.env.MOCK_PRIVATE_KEY_EVM || "b243401a4c59ba95ec01939edbf269e6d78f1c5ac55e7a704705761ca6c56448",
-        [Platform.Solana]: process.env.MOCK_PRIVATE_KEY_SOLANA || "3132333435363738393031323334353637383930313233343536373839303132",
-        [Platform.Sui]: process.env.MOCK_PRIVATE_KEY_SUI || "0x0000000000000000000000000000000000000000000000000000000000000000",
-        [Platform.Aptos]: process.env.MOCK_PRIVATE_KEY_APTOS || "0x0000000000000000000000000000000000000000000000000000000000000000",
+        [Platform.Evm]:
+            process.env.MOCK_PRIVATE_KEY_EVM || "b243401a4c59ba95ec01939edbf269e6d78f1c5ac55e7a704705761ca6c56448",
+        [Platform.Solana]:
+            process.env.MOCK_PRIVATE_KEY_SOLANA || "3132333435363738393031323334353637383930313233343536373839303132",
+        [Platform.Sui]:
+            process.env.MOCK_PRIVATE_KEY_SUI || "0x0000000000000000000000000000000000000000000000000000000000000000",
+        [Platform.Aptos]:
+            process.env.MOCK_PRIVATE_KEY_APTOS || "0x0000000000000000000000000000000000000000000000000000000000000000",
     },
     auth: {
         signature: {
-            duration: process.env.AUTH_SIGNATURE_DURATION ? Number.parseInt(process.env.AUTH_SIGNATURE_DURATION) : 60 * 60 * 24, // 24 hours
+            duration: process.env.AUTH_SIGNATURE_DURATION
+                ? Number.parseInt(process.env.AUTH_SIGNATURE_DURATION)
+                : 60 * 60 * 24, // 24 hours
         },
     },
     loki: {

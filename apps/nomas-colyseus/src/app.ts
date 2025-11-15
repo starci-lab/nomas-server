@@ -6,6 +6,8 @@ import { ThrottlerModule } from "@modules/throttler"
 import { PassportModule } from "@modules/passport"
 import { BlockchainModule } from "@modules/blockchain"
 import { ColyseusModule } from "@modules/colyseus"
+import { GameplayNamespaceModule } from "./gameplay"
+import { EventModule } from "@modules/event"
 
 @Module({
     imports: [
@@ -31,9 +33,12 @@ import { ColyseusModule } from "@modules/colyseus"
             loadNextJsQueryService: false,
             isGlobal: true,
         }),
+        EventModule.register({
+            isGlobal: true,
+        }),
         ColyseusModule.forRoot(),
+        GameplayNamespaceModule,
     ],
-    providers: [
-    ],
+    providers: [],
 })
 export class AppModule {}
