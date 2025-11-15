@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
-import { PetGameService } from "@modules/gameplay"
-import { GamePetEvent } from "@modules/game/pet/pet.events"
+import { PetGameService, GamePetEvent } from "@modules/gameplay"
 import {
     BuyPetPayload,
     RemovePetPayload,
@@ -12,7 +11,7 @@ import {
     CleanedPetPayload,
     PlayedPetPayload,
     CreatePoopPayload,
-} from "@modules/game/pet/pet.events"
+} from "@modules/gameplay"
 
 /**
  * Pet Event Handler - Business logic handler that listens to GamePetEvent.* events

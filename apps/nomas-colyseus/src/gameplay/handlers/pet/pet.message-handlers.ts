@@ -11,7 +11,7 @@ import {
     DirectCleanPetPayload,
     CleanedPetPayload,
     PlayedPetPayload,
-} from "@modules/game/pet/pet.events"
+} from "@modules/gameplay"
 
 interface BuyPetMessage {
     petType?: string

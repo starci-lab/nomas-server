@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { MapSchema } from "@colyseus/schema"
 import { Client } from "colyseus"
 import { GameRoomState, Pet, PetPoop, Player } from "@modules/colyseus/schemas"
-import { GameActionMessages, GamePetMessages, DEFAULT_PET_PRICE } from "@modules/game/pet/pet.constants"
+import { GameActionMessages, GamePetMessages, DEFAULT_PET_PRICE } from "./pet.constants"
 import {
     BuyPetPayload,
     CleanedPetPayload,
@@ -13,7 +13,7 @@ import {
     PlayPetPayload,
     PlayedPetPayload,
     RemovePetPayload,
-} from "@modules/game/pet/pet.events"
+} from "./pet.events"
 
 type ActionResponsePayload = {
     success: boolean

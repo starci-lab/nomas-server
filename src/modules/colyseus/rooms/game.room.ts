@@ -1,11 +1,15 @@
 import { Client } from "colyseus"
 import { RetryService } from "@modules/mixin"
 import { GameRoomState, Pet, Player } from "@modules/colyseus/schemas"
-import { GamePetMessages } from "@modules/game"
+import { GamePetMessages, GameFoodMessages, GamePetEvent, GameFoodEvent } from "@modules/gameplay"
 import { PetService } from "@apps/nomas-colyseus/src/gameplay/handlers/pet/pet.message-handlers"
+import { FoodMessageHandlers } from "@apps/nomas-colyseus/src/gameplay/handlers/food/food.message-handlers"
+import { InventoryMessageHandlers } from "@apps/nomas-colyseus/src/gameplay/handlers/inventory/inventory.message-handlers"
+import { PlayerMessageHandlers } from "@apps/nomas-colyseus/src/gameplay/handlers/player/player.message-handlers"
 import { BaseRoom } from "./base.room"
 import { OnMessage, EmitMessage } from "../decorators"
-import { GamePetEvent } from "@modules/game/pet/pet.events"
+import { GameInventoryEvent } from "@modules/gameplay/inventory"
+import { GamePlayerEvent, GamePlayerMessages } from "@modules/gameplay"
 
 const ROOM_CONFIG = {
     maxClients: 4,
@@ -58,6 +62,9 @@ export class GameRoom extends BaseRoom<GameRoomState> {
     private retryService: RetryService | null = null
     private lastStatePersistedAt = 0
     private petMessages: PetService | null = null
+    private foodMessages: FoodMessageHandlers | null = null
+    private inventoryMessages: InventoryMessageHandlers | null = null
+    private playerMessages: PlayerMessageHandlers | null = null
 
     maxClients = ROOM_CONFIG.maxClients
 
@@ -106,6 +113,9 @@ export class GameRoom extends BaseRoom<GameRoomState> {
     private initializeDependencies() {
         this.retryService = this.app.get(RetryService, { strict: false })
         this.petMessages = this.app.get(PetService, { strict: false })
+        this.foodMessages = this.app.get(FoodMessageHandlers, { strict: false })
+        this.inventoryMessages = this.app.get(InventoryMessageHandlers, { strict: false })
+        this.playerMessages = this.app.get(PlayerMessageHandlers, { strict: false })
     }
 
     private initializeRoom(options: GameRoomOptions) {
@@ -200,6 +210,123 @@ export class GameRoom extends BaseRoom<GameRoomState> {
             return null
         }
         return this.petMessages.createPoop(this)(client, data)
+    }
+
+    // Food message handlers
+    @OnMessage(GameFoodMessages.BUY_FOOD)
+    @EmitMessage(GameFoodEvent.PurchaseRequested)
+    private handleBuyFood(
+        client: Client,
+        data: { itemId?: string; itemType?: string; itemName?: string; quantity?: number } = {},
+    ) {
+        if (!this.foodMessages) {
+            return null
+        }
+        return this.foodMessages.purchaseItem(this)(client, data)
+    }
+
+    @OnMessage(GameFoodMessages.GET_CATALOG)
+    @EmitMessage(GameFoodEvent.GetCatalogRequested)
+    private handleGetCatalog(client: Client) {
+        if (!this.foodMessages) {
+            return null
+        }
+        return this.foodMessages.getCatalog(this)(client)
+    }
+
+    @OnMessage(GameFoodMessages.GET_INVENTORY)
+    @EmitMessage(GameFoodEvent.GetInventoryRequested)
+    private handleGetFoodInventory(client: Client) {
+        if (!this.foodMessages) {
+            return null
+        }
+        return this.foodMessages.getInventory(this)(client)
+    }
+
+    @OnMessage(GameFoodMessages.FEED_PET)
+    @EmitMessage(GameFoodEvent.FeedPetRequested)
+    private handleFeedPetWithFood(client: Client, data: { petId?: string; foodType?: string; quantity?: number } = {}) {
+        if (!this.foodMessages) {
+            return null
+        }
+        return this.foodMessages.feedPet(this)(client, data)
+    }
+
+    // Inventory message handlers
+    @OnMessage("get_inventory")
+    @EmitMessage(GameInventoryEvent.GetInventoryRequested)
+    private handleGetInventory(client: Client) {
+        if (!this.inventoryMessages) {
+            return null
+        }
+        return this.inventoryMessages.getInventory(this)(client)
+    }
+
+    // Player message handlers
+    @OnMessage(GamePlayerMessages.REQUEST_GAME_CONFIG)
+    @EmitMessage(GamePlayerEvent.GetGameConfigRequested)
+    private handleRequestGameConfig(client: Client) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.requestGameConfig(this)(client)
+    }
+
+    @OnMessage(GamePlayerMessages.REQUEST_PLAYER_STATE)
+    @EmitMessage(GamePlayerEvent.GetPlayerStateRequested)
+    private handleRequestPlayerState(client: Client) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.requestPlayerState(this)(client)
+    }
+
+    @OnMessage(GamePlayerMessages.GET_PROFILE)
+    @EmitMessage(GamePlayerEvent.GetProfileRequested)
+    private handleGetProfile(client: Client) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.getProfile(this)(client)
+    }
+
+    @OnMessage(GamePlayerMessages.REQUEST_PETS_STATE)
+    @EmitMessage(GamePlayerEvent.GetPetsStateRequested)
+    private handleRequestPetsState(client: Client, data: unknown = {}) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.requestPetsState(this)(client, data)
+    }
+
+    @OnMessage(GamePlayerMessages.CLAIM_DAILY_REWARD)
+    @EmitMessage(GamePlayerEvent.ClaimDailyRewardRequested)
+    private handleClaimDailyReward(client: Client) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.claimDailyReward(this)(client)
+    }
+
+    @OnMessage(GamePlayerMessages.UPDATE_SETTINGS)
+    @EmitMessage(GamePlayerEvent.UpdateSettingsRequested)
+    private handleUpdateSettings(client: Client, data: { name?: string; preferences?: Record<string, unknown> } = {}) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.updateSettings(this)(client, data)
+    }
+
+    @OnMessage(GamePlayerMessages.UPDATE_TUTORIAL)
+    @EmitMessage(GamePlayerEvent.UpdateTutorialRequested)
+    private handleUpdateTutorial(
+        client: Client,
+        data: { step?: string; completed?: boolean; progress?: Record<string, unknown> } = {},
+    ) {
+        if (!this.playerMessages) {
+            return null
+        }
+        return this.playerMessages.updateTutorial(this)(client, data)
     }
 
     private startSimulationLoop() {

@@ -7,7 +7,7 @@ import { Module } from "@nestjs/common"
         EmitterModule.register({
             isGlobal: true,
         }),
-        HandlerModule.register(),
+        HandlerModule,
     ],
 })
 export class GameplayNamespaceModule {}
