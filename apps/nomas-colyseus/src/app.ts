@@ -8,6 +8,7 @@ import { BlockchainModule } from "@modules/blockchain"
 import { ColyseusModule } from "@modules/colyseus"
 import { GameplayNamespaceModule } from "./gameplay"
 import { EventModule } from "@modules/event"
+import { GameplayModule } from "@modules/gameplay"
 
 @Module({
     imports: [
@@ -21,6 +22,9 @@ import { EventModule } from "@modules/event"
             isGlobal: true,
         }),
         PassportModule.register({
+            isGlobal: true,
+        }),
+        GameplayModule.register({
             isGlobal: true,
         }),
         // we require mongodb for the core module

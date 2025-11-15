@@ -1,5 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { PetGameService } from "@modules/gameplay/pet/pet.service"
+import { OnEvent } from "@nestjs/event-emitter"
+import { PetGameService } from "@modules/gameplay"
+import { GamePetEvent } from "@modules/game/pet/pet.events"
 import {
     BuyPetPayload,
     RemovePetPayload,
@@ -12,12 +14,21 @@ import {
     CreatePoopPayload,
 } from "@modules/game/pet/pet.events"
 
+/**
+ * Pet Event Handler - Business logic handler that listens to GamePetEvent.* events
+ * This handler directly listens to events emitted from Colyseus rooms and executes business logic
+ *
+ * Flow: Room emits event → This handler listens (@OnEvent) → Executes business logic
+ */
 @Injectable()
 export class PetEventHandler {
     private readonly logger = new Logger(PetEventHandler.name)
     constructor(private readonly petGameService: PetGameService) {}
 
-    async handleBuyPet(payload: BuyPetPayload) {
+    // Event listeners - directly listen to events emitted from rooms
+    @OnEvent(GamePetEvent.BuyRequested)
+    async onBuyPet(payload: BuyPetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.BuyRequested}`)
         try {
             await this.petGameService.handleBuyPet(payload)
         } catch (error) {
@@ -26,7 +37,9 @@ export class PetEventHandler {
         }
     }
 
-    async handleRemovePet(payload: RemovePetPayload) {
+    @OnEvent(GamePetEvent.RemoveRequested)
+    async onRemovePet(payload: RemovePetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.RemoveRequested}`)
         try {
             await this.petGameService.handleRemovePet(payload)
         } catch (error) {
@@ -35,7 +48,9 @@ export class PetEventHandler {
         }
     }
 
-    async handleFeedPet(payload: FeedPetPayload) {
+    @OnEvent(GamePetEvent.FeedRequested)
+    async onFeedPet(payload: FeedPetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.FeedRequested}`)
         try {
             await this.petGameService.handleFeedPet(payload)
         } catch (error) {
@@ -44,7 +59,9 @@ export class PetEventHandler {
         }
     }
 
-    async handlePlayPet(payload: PlayPetPayload) {
+    @OnEvent(GamePetEvent.PlayRequested)
+    async onPlayPet(payload: PlayPetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.PlayRequested}`)
         try {
             await this.petGameService.handlePlayPet(payload)
         } catch (error) {
@@ -53,7 +70,9 @@ export class PetEventHandler {
         }
     }
 
-    async handleCleanPet(payload: DirectCleanPetPayload) {
+    @OnEvent(GamePetEvent.CleanRequested)
+    async onCleanPet(payload: DirectCleanPetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.CleanRequested}`)
         try {
             await this.petGameService.handleCleanPet(payload)
         } catch (error) {
@@ -62,7 +81,9 @@ export class PetEventHandler {
         }
     }
 
-    async handleFoodConsumed(payload: FoodConsumedPayload) {
+    @OnEvent(GamePetEvent.FoodConsumed)
+    async onFoodConsumed(payload: FoodConsumedPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.FoodConsumed}`)
         try {
             await this.petGameService.handleFoodConsumed(payload)
         } catch (error) {
@@ -71,7 +92,9 @@ export class PetEventHandler {
         }
     }
 
-    async handleCleanedPet(payload: CleanedPetPayload) {
+    @OnEvent(GamePetEvent.Cleaned)
+    async onCleanedPet(payload: CleanedPetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.Cleaned}`)
         try {
             await this.petGameService.handleCleanedPet(payload)
         } catch (error) {
@@ -80,7 +103,9 @@ export class PetEventHandler {
         }
     }
 
-    async handlePlayedPet(payload: PlayedPetPayload) {
+    @OnEvent(GamePetEvent.Played)
+    async onPlayedPet(payload: PlayedPetPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.Played}`)
         try {
             await this.petGameService.handlePlayedPet(payload)
         } catch (error) {
@@ -89,7 +114,9 @@ export class PetEventHandler {
         }
     }
 
-    async handleCreatePoop(payload: CreatePoopPayload) {
+    @OnEvent(GamePetEvent.PoopCreated)
+    async onPoopCreated(payload: CreatePoopPayload) {
+        this.logger.debug(`Event received: ${GamePetEvent.PoopCreated}`)
         try {
             await this.petGameService.handleCreatePoop(payload)
         } catch (error) {

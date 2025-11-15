@@ -20,7 +20,7 @@ export class EventEmitterService {
         private readonly instanceIdService: InstanceIdService,
     ) {}
 
-    async emit<T>(event: EventName, payload: T, options?: EmitOptions) {
+    async emit<T>(event: EventName | string, payload: T, options?: EmitOptions) {
         // emit locally via event emitter, ensure everything is working locally
         if (!options || !options.withoutLocal) {
             this.eventEmitter.emit(event, payload)

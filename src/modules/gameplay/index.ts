@@ -1,2 +1,2 @@
-export * from "./pet/pet.module"
-export * from "./pet/pet.service"
+export * from "./pet"
+export * from "./gameplay.module"
