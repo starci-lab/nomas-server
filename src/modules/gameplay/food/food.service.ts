@@ -1,34 +1,43 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Client } from "colyseus"
-import { GameRoomState } from "@modules/colyseus/schemas"
-import { GameFoodActionMessages } from "./food.constants"
-import { PurchaseFoodPayload, GetCatalogPayload, GetFoodInventoryPayload, FeedPetWithFoodPayload } from "./food.events"
-
-type ActionResponsePayload = {
-    success: boolean
-    message: string
-    data?: Record<string, unknown>
-}
+import { GameRoomColyseusSchema } from "@modules/colyseus/schemas"
+import { GameActionResponseMessage } from "../events"
+import { 
+    PurchaseFoodPayload, 
+    GetCatalogPayload, 
+    GetFoodInventoryPayload, 
+    FeedPetWithFoodPayload
+} from "./food.events"
+import { ActionResponsePayload } from "../events"
 
 @Injectable()
 export class FoodGameService {
     private readonly logger = new Logger(FoodGameService.name)
 
-    async handlePurchaseItem({ room, client, sessionId, itemId, itemType, itemName, quantity }: PurchaseFoodPayload) {
-        const player = this.getPlayer(room.state, sessionId)
+    async handlePurchaseItem(
+        { 
+            room, 
+            client, 
+            sessionId, 
+            itemId, 
+            itemType, 
+            itemName, 
+            quantity
+        }: PurchaseFoodPayload) {
+        const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
-            this.sendActionResponse(client, GameFoodActionMessages.PURCHASE_RESPONSE, {
+            this.sendActionResponse(client, GameActionResponseMessage.Purchase, {
                 success: false,
-                message: "Player not found in room",
+                message: GameActionResponseMessage.Purchase,
             })
             return
         }
 
         // TODO: Implement purchase logic
         this.logger.debug("handlePurchaseItem not yet implemented")
-        this.sendActionResponse(client, GameFoodActionMessages.PURCHASE_RESPONSE, {
+        this.sendActionResponse(client, GameActionResponseMessage.Purchase, {
             success: true,
-            message: "Purchase item (placeholder)",
+            message: GameActionResponseMessage.Purchase,
             data: { itemId, itemType, itemName, quantity },
         })
     }
@@ -43,27 +52,28 @@ export class FoodGameService {
                 fish: { price: 15, name: "Fish" },
             },
         }
-        client.send(GameFoodActionMessages.CATALOG_RESPONSE, {
+        client.send(GameActionResponseMessage.BuyFood, {
             success: true,
-            catalog,
+            message: GameActionResponseMessage.BuyFood,
+            data: { catalog },
         })
     }
 
     async handleGetInventory({ room, client, sessionId }: GetFoodInventoryPayload) {
         const player = this.getPlayer(room.state, sessionId)
         if (!player) {
-            this.sendActionResponse(client, GameFoodActionMessages.INVENTORY_RESPONSE, {
+            this.sendActionResponse(client, GameActionResponseMessage.BuyFood, {
                 success: false,
-                message: "Player not found in room",
+                message: GameActionResponseMessage.BuyFood,
             })
             return
         }
 
         // TODO: Implement get inventory logic
         this.logger.warn("handleGetInventory not yet implemented")
-        this.sendActionResponse(client, GameFoodActionMessages.INVENTORY_RESPONSE, {
+        this.sendActionResponse(client, GameActionResponseMessage.BuyFood, {
             success: true,
-            message: "Get inventory (placeholder)",
+            message: GameActionResponseMessage.BuyFood,
             data: { inventory: [] },
         })
     }
@@ -71,18 +81,18 @@ export class FoodGameService {
     async handleFeedPet({ room, client, sessionId, petId, foodType, quantity }: FeedPetWithFoodPayload) {
         const player = this.getPlayer(room.state, sessionId)
         if (!player) {
-            this.sendActionResponse(client, GameFoodActionMessages.FEED_RESPONSE, {
+            this.sendActionResponse(client, GameActionResponseMessage.BuyFood, {
                 success: false,
-                message: "Player not found in room",
+                message: GameActionResponseMessage.BuyFood,
             })
             return
         }
 
         // TODO: Implement feed pet logic
         this.logger.warn("handleFeedPet not yet implemented")
-        this.sendActionResponse(client, GameFoodActionMessages.FEED_RESPONSE, {
+        this.sendActionResponse(client, GameActionResponseMessage.BuyFood, {
             success: true,
-            message: "Feed pet (placeholder)",
+            message: GameActionResponseMessage.BuyFood,
             data: { petId, foodType, quantity },
         })
     }
@@ -91,7 +101,7 @@ export class FoodGameService {
         return state.players.get(sessionId)
     }
 
-    private sendActionResponse(client: Client, messageType: string, payload: ActionResponsePayload) {
+    private sendActionResponse(client: Client, messageType: string, payload: ActionResponsePayload<Record<string, unknown>>) {
         client.send(messageType, {
             success: payload.success,
             message: payload.message,

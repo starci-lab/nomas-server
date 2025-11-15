@@ -1,0 +1,3 @@
+export const GAME_ROOM_MAX_CLIENTS = 1
+export const GAME_ROOM_UPDATE_INTERVAL = 1000
+export const GAME_ROOM_RECONNECTION_TIME = 60

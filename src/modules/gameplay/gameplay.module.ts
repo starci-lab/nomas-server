@@ -10,7 +10,12 @@ export class GameplayModule extends ConfigurableModuleClass {
     static register(options: typeof OPTIONS_TYPE): DynamicModule {
         const dynamicModule = super.register(options)
         // services that are always loaded
-        const services: Array<Provider> = [PetGameService, FoodGameService, InventoryGameService, PlayerGameService]
+        const services: Array<Provider> = [
+            PetGameService, 
+            FoodGameService, 
+            InventoryGameService, 
+            PlayerGameService
+        ]
         const imports: Array<DynamicModule> = []
         const providers: Array<Provider> = services
         const exports: Array<Provider> = services

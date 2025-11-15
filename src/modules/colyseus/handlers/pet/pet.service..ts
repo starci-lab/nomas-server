@@ -20,8 +20,8 @@ import {
  * Flow: Room emits event → This handler listens (@OnEvent) → Executes business logic
  */
 @Injectable()
-export class PetEventHandler {
-    private readonly logger = new Logger(PetEventHandler.name)
+export class PetHandlerService {
+    private readonly logger = new Logger(PetHandlerService.name)
     constructor(private readonly petGameService: PetGameService) {}
 
     // Event listeners - directly listen to events emitted from rooms

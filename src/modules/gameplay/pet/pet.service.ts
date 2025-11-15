@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { MapSchema } from "@colyseus/schema"
 import { Client } from "colyseus"
-import { GameRoomState, Pet, PetPoop, Player } from "@modules/colyseus/schemas"
+import { GameRoomColyseusSchema, PetColyseusSchema, PlayerColyseusSchema, PoopColyseusSchema } from "@modules/colyseus/schemas"
 import { GameActionMessages, GamePetMessages, DEFAULT_PET_PRICE } from "./pet.constants"
 import {
     BuyPetPayload,
@@ -26,7 +26,7 @@ export class PetGameService {
     private readonly logger = new Logger(PetGameService.name)
 
     async handleBuyPet({ room, client, sessionId, petType, petTypeId, isBuyPet }: BuyPetPayload) {
-        const player = this.getPlayer(room.state, sessionId)
+        const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
             this.sendActionResponse(client, GameActionMessages.BUY_PET_RESPONSE, {
                 success: false,
@@ -53,7 +53,7 @@ export class PetGameService {
             petType,
         })
         if (!player.pets) {
-            player.pets = new MapSchema<Pet>()
+            player.pets = new MapSchema<PetColyseusSchema>()
         }
         player.pets.set(newPet.id, newPet)
         room.state.pets.set(newPet.id, newPet)
@@ -74,12 +74,12 @@ export class PetGameService {
     }
 
     async handleRemovePet({ room, client, sessionId, petId }: RemovePetPayload) {
-        const player = this.getPlayer(room.state, sessionId)
+        const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
             return
         }
 
-        const pet = room.state.pets.get(petId)
+        const pet = room.state.pets.get(petId) as PetColyseusSchema
         if (!pet) {
             this.sendActionResponse(client, GameActionMessages.REMOVE_PET_RESPONSE, {
                 success: false,
@@ -107,7 +107,7 @@ export class PetGameService {
     }
 
     async handleFeedPet({ room, client, sessionId, petId, foodType }: FeedPetPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             this.sendActionResponse(client, GameActionMessages.RESPONSE, {
                 success: false,
@@ -135,7 +135,7 @@ export class PetGameService {
     }
 
     async handlePlayPet({ room, client, sessionId, petId }: PlayPetPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             this.sendActionResponse(client, GameActionMessages.RESPONSE, {
                 success: false,
@@ -161,7 +161,7 @@ export class PetGameService {
     }
 
     async handleCleanPet({ room, client, sessionId, petId }: DirectCleanPetPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             this.sendActionResponse(client, GameActionMessages.RESPONSE, {
                 success: false,
@@ -188,7 +188,7 @@ export class PetGameService {
     }
 
     async handleFoodConsumed({ room, sessionId, petId, hungerLevel }: FoodConsumedPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             return
         }
@@ -201,7 +201,7 @@ export class PetGameService {
     }
 
     async handleCleanedPet({ room, client, sessionId, petId, cleaningItemId, poopId }: CleanedPetPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             this.sendActionResponse(client, GameActionMessages.CLEANED_PET_RESPONSE, {
                 success: false,
@@ -232,7 +232,7 @@ export class PetGameService {
     }
 
     async handlePlayedPet({ room, client, sessionId, petId, happinessLevel }: PlayedPetPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             this.sendActionResponse(client, GameActionMessages.RESPONSE, {
                 success: false,
@@ -259,7 +259,7 @@ export class PetGameService {
     }
 
     async handleCreatePoop({ room, client, sessionId, petId, positionX, positionY }: CreatePoopPayload) {
-        const { player, pet } = this.getPlayerAndPet(room.state, sessionId, petId)
+        const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
             this.sendActionResponse(client, GameActionMessages.CREATE_POOP_RESPONSE, {
                 success: false,
@@ -269,7 +269,7 @@ export class PetGameService {
         }
 
         const poopId = `${petId}-poop-${Date.now()}`
-        const poop = new PetPoop()
+        const poop = new PoopColyseusSchema()
         poop.id = poopId
         poop.petId = petId
         poop.positionX = positionX
@@ -293,17 +293,17 @@ export class PetGameService {
         this.sendPetsStateSync(client, player)
     }
 
-    private getPlayer(state: GameRoomState, sessionId: string) {
+    private getPlayer(state: GameRoomColyseusSchema, sessionId: string) {
         return state.players.get(sessionId)
     }
 
-    private getPlayerAndPet(state: GameRoomState, sessionId: string, petId: string) {
+    private getPlayerAndPet(state: GameRoomColyseusSchema, sessionId: string, petId: string) {
         const player = this.getPlayer(state, sessionId)
         if (!player) {
             this.logger.warn(`Player ${sessionId} not found in room`)
             return { player: null, pet: null }
         }
-        const pet = state.pets.get(petId)
+        const pet = state.pets.get(petId) as PetColyseusSchema
         if (!pet) {
             this.logger.warn(`Pet ${petId} not found for player ${sessionId}`)
             return { player, pet: null }
@@ -313,7 +313,7 @@ export class PetGameService {
     }
 
     private createPet({ id, ownerId, petType }: { id: string; ownerId: string; petType?: string }) {
-        const pet = new Pet()
+        const pet = new PetColyseusSchema()
         pet.id = id
         pet.ownerId = ownerId
         pet.petType = petType ?? "default"
@@ -325,15 +325,15 @@ export class PetGameService {
         return pet
     }
 
-    private refreshPlayerPetReference(player: Player, pet: Pet) {
+    private refreshPlayerPetReference(player: PlayerColyseusSchema, pet: PetColyseusSchema) {
         if (!player.pets) {
-            player.pets = new MapSchema<Pet>()
+            player.pets = new MapSchema<PetColyseusSchema>()
         }
         player.pets.set(pet.id, pet)
         player.totalPetsOwned = player.pets.size
     }
 
-    private sendPetsStateSync(client: Client, player: Player) {
+    private sendPetsStateSync(client: Client, player: PlayerColyseusSchema) {
         const pets = this.mapSchemaToArray(player.pets)
         client.send(GamePetMessages.STATE_SYNC, {
             pets,
@@ -349,11 +349,11 @@ export class PetGameService {
         })
     }
 
-    private mapSchemaToArray(map?: MapSchema<Pet>) {
+    private mapSchemaToArray(map?: MapSchema<PetColyseusSchema>) {
         if (!map) {
             return []
         }
-        const list: Pet[] = []
+        const list: PetColyseusSchema[] = []
         map.forEach((item) => list.push(item))
         return list
     }

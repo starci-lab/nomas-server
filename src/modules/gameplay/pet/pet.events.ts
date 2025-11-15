@@ -1,5 +1,5 @@
 import type { Client } from "colyseus"
-import type { GameRoom } from "@modules/colyseus/rooms/game.room"
+import type { GameRoom } from "@modules/colyseus/rooms/game"
 import type { Pet } from "@modules/colyseus/schemas"
 
 export enum GamePetEvent {

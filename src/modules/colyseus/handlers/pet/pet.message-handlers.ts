@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import type { Client } from "colyseus"
-import type { GameRoom } from "@modules/colyseus/rooms/game.room"
+import type { GameRoom } from "@modules/colyseus/rooms/game"
 import {
     CreatePoopPayload,
     FoodConsumedPayload,

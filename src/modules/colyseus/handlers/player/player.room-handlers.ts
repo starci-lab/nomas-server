@@ -1,5 +1,5 @@
 import { Client } from "colyseus"
-import type { GameRoom } from "@modules/colyseus/rooms/game.room"
+import type { GameRoom } from "@modules/colyseus/rooms/game"
 import { GamePlayerMessages, GamePlayerEvent } from "@modules/gameplay"
 import { PlayerMessageHandlers } from "./player.message-handlers"
 

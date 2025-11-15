@@ -1,5 +1,5 @@
 import type { Client } from "colyseus"
-import type { GameRoom } from "@modules/colyseus/rooms/game.room"
+import type { GameRoom } from "@modules/colyseus/rooms/game"
 
 export enum GameInventoryEvent {
     PurchaseItemRequested = "game.inventory.purchaseItemRequested",

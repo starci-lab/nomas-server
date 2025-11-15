@@ -1,7 +1,7 @@
 import { Client } from "colyseus"
-import type { GameRoom } from "@modules/colyseus/rooms/game.room"
-import { GameFoodMessages, GameFoodEvent } from "@modules/gameplay"
+import type { GameRoom } from "@modules/colyseus/rooms/game"
 import { FoodMessageHandlers } from "./food.message-handlers"
+import { GameActionRequestMessage } from "@modules/gameplay/events"
 
 /**
  * Food Room Handlers - Registers all food-related message handlers to the room
@@ -15,41 +15,41 @@ export class FoodRoomHandlers {
     register() {
         // Buy Food
         this.room.onMessage(
-            GameFoodMessages.BUY_FOOD,
+            GameActionRequestMessage.BuyFood,
             async (
                 client: Client,
                 data: { itemId?: string; itemType?: string; itemName?: string; quantity?: number } = {},
             ) => {
                 const payload = this.foodMessages.purchaseItem(this.room)(client, data)
                 if (payload && this.room.eventEmitterService) {
-                    await this.room.eventEmitterService.emit(GameFoodEvent.PurchaseRequested, payload)
+                    await this.room.eventEmitterService.emit(GameActionRequestMessage.Purchase, payload)
                 }
             },
         )
 
         // Get Catalog
-        this.room.onMessage(GameFoodMessages.GET_CATALOG, async (client: Client) => {
+        this.room.onMessage(GameActionRequestMessage.GetCatalog, async (client: Client) => {
             const payload = this.foodMessages.getCatalog(this.room)(client)
             if (payload && this.room.eventEmitterService) {
-                await this.room.eventEmitterService.emit(GameFoodEvent.GetCatalogRequested, payload)
+                await this.room.eventEmitterService.emit(GameActionRequestMessage.BuyFood, payload)
             }
         })
 
         // Get Inventory
-        this.room.onMessage(GameFoodMessages.GET_INVENTORY, async (client: Client) => {
+        this.room.onMessage(GameActionRequestMessage.GetInventory, async (client: Client) => {
             const payload = this.foodMessages.getInventory(this.room)(client)
             if (payload && this.room.eventEmitterService) {
-                await this.room.eventEmitterService.emit(GameFoodEvent.GetInventoryRequested, payload)
+                await this.room.eventEmitterService.emit(GameActionRequestMessage.BuyFood, payload)
             }
         })
 
         // Feed Pet With Food
         this.room.onMessage(
-            GameFoodMessages.FEED_PET,
+            GameActionRequestMessage.BuyFood,
             async (client: Client, data: { petId?: string; foodType?: string; quantity?: number } = {}) => {
                 const payload = this.foodMessages.feedPet(this.room)(client, data)
                 if (payload && this.room.eventEmitterService) {
-                    await this.room.eventEmitterService.emit(GameFoodEvent.FeedPetRequested, payload)
+                    await this.room.eventEmitterService.emit(GameActionRequestMessage.BuyFood, payload)
                 }
             },
         )

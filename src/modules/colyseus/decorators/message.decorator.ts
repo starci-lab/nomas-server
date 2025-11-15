@@ -1,4 +1,5 @@
 import "reflect-metadata"
+import { GameActionResponseMessage } from "../events"
 
 export const MESSAGE_HANDLER_METADATA_KEY = "colyseus:message_handlers"
 export const MESSAGE_EMITTER_METADATA_KEY = "colyseus:message_emitters"
@@ -17,9 +18,9 @@ export interface MessageEmitterMetadata {
  * Decorator to automatically register message handler
  * @param messageType - Type of message from client (e.g. "buy_pet", "feed_pet")
  */
-export function OnMessage(messageType: string) {
+export const OnMessage = (messageType: GameActionResponseMessage) => {
     return function (target: object, propertyKey: string | symbol) {
-        const existingHandlers: MessageHandlerMetadata[] =
+        const existingHandlers: Array<MessageHandlerMetadata> =
             Reflect.getMetadata(MESSAGE_HANDLER_METADATA_KEY, target.constructor) || []
 
         existingHandlers.push({
@@ -35,9 +36,9 @@ export function OnMessage(messageType: string) {
  * Decorator to automatically emit message after method is called
  * @param messageName - Name of message to emit (e.g. "game.pet.buyRequested")
  */
-export function EmitMessage(messageName: string) {
+export const EmitMessage = (messageName: string) => {
     return function (target: object, propertyKey: string | symbol) {
-        const existingEmitters: MessageEmitterMetadata[] =
+        const existingEmitters: Array<MessageEmitterMetadata> =
             Reflect.getMetadata(MESSAGE_EMITTER_METADATA_KEY, target.constructor) || []
 
         existingEmitters.push({

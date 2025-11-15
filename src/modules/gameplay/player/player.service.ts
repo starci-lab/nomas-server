@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Client } from "colyseus"
-import { GameRoomState } from "@modules/colyseus/schemas"
+import { GameRoomColyseusSchema } from "@modules/colyseus/schemas"
 import { GamePlayerActionMessages } from "./player.constants"
 import {
     GetGameConfigPayload,
@@ -145,7 +145,7 @@ export class PlayerGameService {
         })
     }
 
-    private getPlayer(state: GameRoomState, sessionId: string) {
+    private getPlayer(state: GameRoomColyseusSchema, sessionId: string) {
         return state.players.get(sessionId)
     }
 

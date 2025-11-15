@@ -1,2 +1,2 @@
-export * from "./game.room"
+export * from "./game"
 export * from "./base.room"

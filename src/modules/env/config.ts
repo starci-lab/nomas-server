@@ -46,7 +46,7 @@ export const envConfig = () => ({
         port: process.env.KAFKA_PORT ? Number.parseInt(process.env.KAFKA_PORT) : 9092,
         clientId: process.env.KAFKA_CLIENT_ID || "kafka",
         sasl: {
-            mechanism: process.env.KAFKA_SASL_MECHANISM || "plain",
+            mechanism: process.env.KAFKA_SASL_MECHANISM || "plain" as "plain" | "scram-sha-256",
             username: process.env.KAFKA_SASL_USERNAME || "kafka",
             password: process.env.KAFKA_SASL_PASSWORD || "Cuong123_A",
             enabled: process.env.KAFKA_SASL_ENABLED === "true",

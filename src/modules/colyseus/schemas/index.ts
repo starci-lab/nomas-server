@@ -1,1 +1,5 @@
-export * from "./game.schema"
+export * from "./player.schema"
+export * from "./pet.schema"
+export * from "./inventory-item.schema"
+export * from "./poop.schema"
+export * from "./room.schema"
