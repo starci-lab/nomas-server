@@ -25,7 +25,7 @@ export class FoodGameService {
         }
 
         // TODO: Implement purchase logic
-        this.logger.warn("handlePurchaseItem not yet implemented")
+        this.logger.debug("handlePurchaseItem not yet implemented")
         this.sendActionResponse(client, GameFoodActionMessages.PURCHASE_RESPONSE, {
             success: true,
             message: "Purchase item (placeholder)",

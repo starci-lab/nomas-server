@@ -17,17 +17,25 @@ export interface PlayerEventBasePayload {
     sessionId: string
 }
 
-export interface GetGameConfigPayload extends PlayerEventBasePayload {}
+export interface GetGameConfigPayload extends PlayerEventBasePayload {
+    data?: unknown
+}
 
-export interface GetPlayerStatePayload extends PlayerEventBasePayload {}
+export interface GetPlayerStatePayload extends PlayerEventBasePayload {
+    data?: unknown
+}
 
-export interface GetProfilePayload extends PlayerEventBasePayload {}
+export interface GetProfilePayload extends PlayerEventBasePayload {
+    data?: unknown
+}
 
 export interface GetPetsStatePayload extends PlayerEventBasePayload {
     data?: unknown
 }
 
-export interface ClaimDailyRewardPayload extends PlayerEventBasePayload {}
+export interface ClaimDailyRewardPayload extends PlayerEventBasePayload {
+    data?: unknown
+}
 
 export interface UpdateSettingsPayload extends PlayerEventBasePayload {
     settings?: Record<string, unknown>

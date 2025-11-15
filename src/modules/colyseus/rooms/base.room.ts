@@ -16,7 +16,7 @@ import {
 export abstract class BaseRoom<T extends object = object> extends Room<T> {
     protected readonly logger = new Logger(BaseRoom.name)
     protected readonly app: INestApplication
-    protected eventEmitterService: EventEmitterService | null = null
+    public eventEmitterService: EventEmitterService | null = null
 
     constructor() {
         super()
