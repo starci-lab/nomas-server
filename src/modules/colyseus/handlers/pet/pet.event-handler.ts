@@ -22,7 +22,7 @@ import {
     PoopColyseusSchema,
 } from "@modules/colyseus/schemas"
 import { MapSchema } from "@colyseus/schema"
-import { PlayerSyncService } from "../player-sync.service"
+import { PlayerSyncService } from "../player/player-sync.service"
 import { DEFAULT_PET_PRICE } from "../constants"
 
 /**

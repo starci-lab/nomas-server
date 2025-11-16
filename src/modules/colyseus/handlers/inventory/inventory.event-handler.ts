@@ -12,7 +12,7 @@ import {
     InventorySummary,
 } from "./types"
 import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSchema } from "@modules/colyseus/schemas"
-import { PlayerSyncService } from "../player-sync.service"
+import { PlayerSyncService } from "../player/player-sync.service"
 import { MemdbStorageService, StoreItemSchema } from "@modules/databases"
 
 /**
@@ -137,7 +137,7 @@ export class InventoryEventHandler {
                 }
             }
         } catch (error) {
-            this.logger.error(`Failed to handle get inventory: ${error.message}`, error.stack)
+            this.logger.debug(`Failed to handle get inventory: ${error.message}`, error.stack)
             result = {
                 success: false,
                 message: "Failed to get inventory",
@@ -168,7 +168,7 @@ export class InventoryEventHandler {
             const storeItem = storeItems.find((item) => item._id?.toString() === itemId || item._id === itemId)
             return storeItem || null
         } catch (error) {
-            this.logger.error(
+            this.logger.debug(
                 `Error getting store item from memdb: ${error instanceof Error ? error.message : "Unknown error"}`,
             )
             return null
@@ -200,7 +200,7 @@ export class InventoryEventHandler {
         inventoryItem.totalPurchased += quantity
 
         this.logger.debug(
-            `📦 Added ${quantity}x ${itemId} to ${player.sessionId}'s inventory. Total: ${inventoryItem.quantity}`,
+            `Added ${quantity}x ${itemId} to ${player.sessionId}'s inventory. Total: ${inventoryItem.quantity}`,
         )
     }
 

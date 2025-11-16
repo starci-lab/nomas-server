@@ -25,7 +25,7 @@ import {
     PetColyseusSchema,
     InventoryItemColyseusSchema,
 } from "@modules/colyseus/schemas"
-import { PlayerSyncService } from "../player-sync.service"
+import { PlayerSyncService } from "../player/player-sync.service"
 
 /**
  * Food Event Handler - Business logic layer

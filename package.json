@@ -22,6 +22,7 @@
   "dependencies": {
     "@aptos-labs/ts-sdk": "^5.1.1",
     "@as-integrations/express5": "^1.1.2",
+    "@colyseus/monitor": "^0.16.7",
     "@colyseus/schema": "^3.0.68",
     "@keyv/redis": "^5.1.4",
     "@mysten/sui": "^1.44.0",
