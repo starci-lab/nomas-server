@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
-import { PlayerGameService, GamePlayerEvent } from "@modules/gameplay"
+import { PlayerGameService } from "@modules/gameplay/player/player.service"
+import { GamePlayerEvent } from "@modules/colyseus/events"
 import {
     GetGameConfigPayload,
     GetPlayerStatePayload,

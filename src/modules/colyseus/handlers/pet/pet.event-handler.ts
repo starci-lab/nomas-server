@@ -1,7 +1,7 @@
 import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
 import { Client } from "colyseus"
-import { GamePetEvent } from "@modules/gameplay"
+import { GamePetEvent } from "@modules/colyseus/events"
 import {
     BuyPetPayload,
     RemovePetPayload,
@@ -12,8 +12,9 @@ import {
     PlayedPetPayload,
     CreatePoopPayload,
     FoodConsumedPayload,
-} from "@modules/gameplay"
-
+    SenderRoom,
+    StateRoom,
+} from "./types"
 import {
     GameRoomColyseusSchema,
     PetColyseusSchema,
@@ -23,7 +24,6 @@ import {
 import { MapSchema } from "@colyseus/schema"
 import { PlayerGameService } from "@modules/gameplay/player/player.service"
 import { DEFAULT_PET_PRICE } from "@modules/gameplay/pet/pet.constants"
-import { SenderRoom, StateRoom } from "./types"
 
 /**
  * Pet Event Handler - Business logic layer

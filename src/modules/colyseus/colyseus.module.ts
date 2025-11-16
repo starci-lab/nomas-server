@@ -3,10 +3,7 @@ import { ConfigurableModuleClass } from "./colyseus.module-definition"
 import { createColyseusServerProvider } from "./colyseus.providers"
 import { ColyseusService } from "./colyseus.service"
 import { MixinModule } from "@modules/mixin"
-import { PetHandlersModule } from "./handlers/pet/pet.module"
-import { FoodHandlersModule } from "./handlers/food/food.module"
-import { InventoryHandlersModule } from "./handlers/inventory/inventory.module"
-import { PlayerHandlersModule } from "./handlers/player/player.module"
+import { PetHandlersModule, FoodHandlersModule, InventoryHandlersModule, PlayerHandlersModule } from "./handlers"
 
 @Module({
     imports: [

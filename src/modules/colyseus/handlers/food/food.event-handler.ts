@@ -1,7 +1,7 @@
 import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
 import { EventEmitter2 } from "@nestjs/event-emitter"
-import { GameFoodEvent } from "@modules/gameplay"
+import { GameFoodEvent } from "@modules/colyseus/events"
 import {
     PurchaseFoodPayload,
     GetCatalogPayload,
@@ -11,13 +11,14 @@ import {
     GetCatalogResponsePayload,
     GetFoodInventoryResponsePayload,
     FeedPetWithFoodResponsePayload,
-} from "@modules/gameplay"
-import {
     PurchaseFoodResult,
     GetCatalogResult,
     GetFoodInventoryResult,
     FeedPetWithFoodResult,
-} from "@modules/gameplay/food/food.results"
+    StateRoom,
+    FoodItems,
+    InventorySummary,
+} from "./types"
 import {
     GameRoomColyseusSchema,
     PlayerColyseusSchema,
@@ -25,7 +26,6 @@ import {
     InventoryItemColyseusSchema,
 } from "@modules/colyseus/schemas"
 import { PlayerGameService } from "@modules/gameplay/player/player.service"
-import { StateRoom, FoodItems, InventorySummary } from "./types"
 
 /**
  * Food Event Handler - Business logic layer

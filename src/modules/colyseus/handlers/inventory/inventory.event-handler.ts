@@ -1,18 +1,20 @@
 import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
 import { EventEmitter2 } from "@nestjs/event-emitter"
+import { GameInventoryEvent } from "@modules/colyseus/events"
 import {
-    GameInventoryEvent,
+    PurchaseInventoryItemPayload,
+    GetInventoryPayload,
     PurchaseInventoryItemResponsePayload,
     GetInventoryResponsePayload,
-} from "@modules/gameplay"
-import { PurchaseInventoryItemPayload, GetInventoryPayload } from "@modules/gameplay"
-import { PurchaseInventoryItemResult, GetInventoryResult } from "@modules/gameplay/inventory/inventory.results"
+    PurchaseInventoryItemResult,
+    GetInventoryResult,
+    InventorySummary,
+} from "./types"
 import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSchema } from "@modules/colyseus/schemas"
 import { PlayerGameService } from "@modules/gameplay/player/player.service"
 import { MemdbStorageService } from "@modules/databases"
 import { StoreItemSchema } from "@modules/databases/mongodb/game/schemas/store-item.schema"
-import { InventorySummary } from "./types"
 
 /**
  * Inventory Event Handler - Business logic layer

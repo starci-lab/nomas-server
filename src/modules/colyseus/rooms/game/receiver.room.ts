@@ -15,16 +15,15 @@ import {
 } from "@modules/colyseus/events"
 import { AbstractPetStateGameRoom } from "./state-pet.room"
 import { Client } from "colyseus"
-import { GamePetEvent, GameFoodEvent, GameInventoryEvent } from "@modules/gameplay"
+import { GamePetEvent, GameFoodEvent, GameInventoryEvent } from "@modules/colyseus/events"
+import { BuyPetPayload } from "@modules/colyseus/handlers/pet/types"
 import {
-    BuyPetPayload,
     PurchaseFoodPayload,
     GetCatalogPayload,
     GetFoodInventoryPayload,
     FeedPetWithFoodPayload,
-    PurchaseInventoryItemPayload,
-    GetInventoryPayload,
-} from "@modules/gameplay"
+} from "@modules/colyseus/handlers/food/types"
+import { PurchaseInventoryItemPayload, GetInventoryPayload } from "@modules/colyseus/handlers/inventory/types"
 import type { GameRoom } from "../game"
 
 export interface RegisterHandler {

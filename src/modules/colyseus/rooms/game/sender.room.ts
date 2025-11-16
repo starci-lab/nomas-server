@@ -26,16 +26,17 @@ import {
 import { AbstractReceiverGameRoom } from "./receiver.room"
 import { PlayerColyseusSchema } from "../../schemas"
 import { OnEvent } from "@nestjs/event-emitter"
+import { GameInventoryEvent, GameFoodEvent } from "@modules/colyseus/events"
 import {
-    GameInventoryEvent,
-    GameFoodEvent,
     PurchaseInventoryItemResponsePayload,
     GetInventoryResponsePayload,
+} from "@modules/colyseus/handlers/inventory/types"
+import {
     PurchaseFoodResponsePayload,
     GetCatalogResponsePayload,
     GetFoodInventoryResponsePayload,
     FeedPetWithFoodResponsePayload,
-} from "@modules/gameplay"
+} from "@modules/colyseus/handlers/food/types"
 
 export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     protected sendWelcomeMessage(client: Client, player: PlayerColyseusSchema) {

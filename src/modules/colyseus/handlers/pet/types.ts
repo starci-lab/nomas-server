@@ -1,5 +1,6 @@
 import { Client } from "colyseus"
 import { PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { GameRoom } from "@modules/colyseus/rooms/game"
 import {
     SendBuyPetResponsePayload,
     SendRemovePetResponsePayload,
@@ -8,6 +9,171 @@ import {
     SendActionResponsePayload,
     SendPetsStateSyncPayload,
 } from "@modules/colyseus/events"
+
+// Base payload types
+export interface PetEventBasePayload {
+    room: GameRoom
+    client: Client
+    sessionId: string
+}
+
+export interface BuyPetPayload extends PetEventBasePayload {
+    petType?: string
+    petTypeId?: string
+    isBuyPet?: boolean
+}
+
+export interface RemovePetPayload extends PetEventBasePayload {
+    petId: string
+}
+
+export interface FeedPetPayload extends PetEventBasePayload {
+    petId: string
+    foodType: string
+}
+
+export interface PlayPetPayload extends PetEventBasePayload {
+    petId: string
+}
+
+export interface DirectCleanPetPayload extends PetEventBasePayload {
+    petId: string
+}
+
+export interface FoodConsumedPayload extends PetEventBasePayload {
+    petId: string
+    hungerLevel: number
+}
+
+export interface CleanedPetPayload extends PetEventBasePayload {
+    petId: string
+    cleaningItemId: string
+    poopId: string
+}
+
+export interface PlayedPetPayload extends PetEventBasePayload {
+    petId: string
+    happinessLevel: number
+}
+
+export interface CreatePoopPayload extends PetEventBasePayload {
+    petId: string
+    positionX: number
+    positionY: number
+}
+
+// Result types
+export interface BuyPetResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        petType?: string
+        petTypeId?: string
+        tokens?: number
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+    pet?: PetColyseusSchema
+}
+
+export interface RemovePetResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        totalPets?: number
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
+
+export interface FeedPetResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        petStats?: {
+            id: string
+            petType: string
+            hunger: number
+            happiness: number
+            cleanliness: number
+            overallHealth: number
+            lastUpdated: number
+            poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+        }
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
+
+export interface PlayPetResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        petStats?: {
+            id: string
+            petType: string
+            hunger: number
+            happiness: number
+            cleanliness: number
+            overallHealth: number
+            lastUpdated: number
+            poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+        }
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
+
+export interface CleanPetResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        petStats?: {
+            id: string
+            petType: string
+            hunger: number
+            happiness: number
+            cleanliness: number
+            overallHealth: number
+            lastUpdated: number
+            poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+        }
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
+
+export interface CleanedPetResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        cleaningItemId?: string
+        cleanliness?: number
+        happiness?: number
+        poopId?: string
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
+
+export interface CreatePoopResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        poopId?: string
+        positionX?: number
+        positionY?: number
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
 
 // Type for sender room methods
 export type SenderRoom = {
