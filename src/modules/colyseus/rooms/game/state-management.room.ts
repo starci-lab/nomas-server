@@ -6,13 +6,12 @@ import { GAME_ROOM_UPDATE_INTERVAL } from "./constanst"
 // we only process logic here, no-related actions should be handled here
 export abstract class AbstractStateManagementGameRoom extends BaseRoom<GameRoomColyseusSchema> {
     protected lastStatePersistedAt = 0
+
     /**
      * Handles passive, time-based decay of a pet's core stats.
      * Called every simulation tick to keep the pet lifecycle dynamic.
      */
-    protected applyPetDecay(
-        pet: PetColyseusSchema
-    ) {
+    protected applyPetDecay(pet: PetColyseusSchema) {
         const DECAY_RATE = new Decimal(1)
         pet.hunger = new Decimal(pet.hunger).minus(DECAY_RATE).toNumber()
         pet.happiness = new Decimal(pet.happiness).minus(DECAY_RATE).toNumber()
@@ -48,12 +47,11 @@ export abstract class AbstractStateManagementGameRoom extends BaseRoom<GameRoomC
         })
     }
 
-
     /**
-    * Executes a single simulation tick of the game loop.
-    * Updates all time-based entity states (eg. pet decay) and performs
-    * periodic background tasks such as state persistence.
-    */
+     * Executes a single simulation tick of the game loop.
+     * Updates all time-based entity states (eg. pet decay) and performs
+     * periodic background tasks such as state persistence.
+     */
     protected runSimulationTick() {
         this.state.players.forEach((player) => {
             player.pets?.forEach((pet) => this.applyPetDecay(pet))
@@ -67,9 +65,9 @@ export abstract class AbstractStateManagementGameRoom extends BaseRoom<GameRoomC
     }
 
     /**
-    * Initializes the simulation loop that drives all recurring game updates.
-    * Executes one simulation tick at a fixed interval defined by GAME_ROOM_UPDATE_INTERVAL constant.
-    */
+     * Initializes the simulation loop that drives all recurring game updates.
+     * Executes one simulation tick at a fixed interval defined by GAME_ROOM_UPDATE_INTERVAL constant.
+     */
     protected initializeSimulationLoop() {
         this.setSimulationInterval(() => this.runSimulationTick(), GAME_ROOM_UPDATE_INTERVAL)
         this.logger.debug("⏱️ Simulation loop initialized")
