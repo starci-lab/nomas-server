@@ -25,6 +25,17 @@ import {
 } from "../../events"
 import { AbstractReceiverGameRoom } from "./receiver.room"
 import { PlayerColyseusSchema } from "../../schemas"
+import { OnEvent } from "@nestjs/event-emitter"
+import {
+    GameInventoryEvent,
+    GameFoodEvent,
+    PurchaseInventoryItemResponsePayload,
+    GetInventoryResponsePayload,
+    PurchaseFoodResponsePayload,
+    GetCatalogResponsePayload,
+    GetFoodInventoryResponsePayload,
+    FeedPetWithFoodResponsePayload,
+} from "@modules/gameplay"
 
 export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     protected sendWelcomeMessage(client: Client, player: PlayerColyseusSchema) {
@@ -117,5 +128,91 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
 
     protected sendPetsStateSync(client: Client, payload: SendPetsStateSyncPayload) {
         client.send(GameActionSendMessage.PetsStateSync, payload)
+    }
+
+    // ============================================================================
+    // Response Event Bridge - Connects Event System to Sending Methods
+    // ============================================================================
+    // Responsibility: Listen to response events from event handlers and convert
+    // them to send payloads, then delegate to send methods.
+    //
+    // Note: This is a bridge layer between the event-driven system (Receiver Room)
+    // and the sending methods (this class). It maintains separation of concerns:
+    // - Receiver Room: Handles incoming client messages → emits request events
+    // - Event Handlers: Process business logic → emit response events
+    // - This class: Listens response events → converts to send payloads → sends to client
+    // ============================================================================
+
+    @OnEvent(GameInventoryEvent.PurchaseItemResponse)
+    onPurchaseItemResponse(payload: PurchaseInventoryItemResponsePayload) {
+        const sendPayload: SendPurchaseResponsePayload = {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        }
+        this.sendPurchaseResponse(payload.client, sendPayload)
+    }
+
+    @OnEvent(GameInventoryEvent.GetInventoryResponse)
+    onGetInventoryResponse(payload: GetInventoryResponsePayload) {
+        const sendPayload: SendInventoryResponsePayload = {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            tokens: payload.result.tokens,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        }
+        this.sendInventoryResponse(payload.client, sendPayload)
+    }
+
+    @OnEvent(GameFoodEvent.PurchaseResponse)
+    onPurchaseFoodResponse(payload: PurchaseFoodResponsePayload) {
+        const sendPayload: SendPurchaseResponsePayload = {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        }
+        this.sendPurchaseResponse(payload.client, sendPayload)
+    }
+
+    @OnEvent(GameFoodEvent.GetCatalogResponse)
+    onGetCatalogResponse(payload: GetCatalogResponsePayload) {
+        const sendPayload: SendStoreCatalogPayload = {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        }
+        this.sendStoreCatalog(payload.client, sendPayload)
+    }
+
+    @OnEvent(GameFoodEvent.GetInventoryResponse)
+    onGetFoodInventoryResponse(payload: GetFoodInventoryResponsePayload) {
+        const sendPayload: SendFoodInventoryPayload = {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        }
+        this.sendFoodInventory(payload.client, sendPayload)
+    }
+
+    @OnEvent(GameFoodEvent.FeedPetResponse)
+    onFeedPetResponse(payload: FeedPetWithFoodResponsePayload) {
+        const sendPayload: SendFeedResultPayload = {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        }
+        this.sendFeedResult(payload.client, sendPayload)
     }
 }

@@ -1,7 +1,7 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
 import { Client } from "colyseus"
-import { PetGameService, GamePetEvent } from "@modules/gameplay"
+import { GamePetEvent } from "@modules/gameplay"
 import {
     BuyPetPayload,
     RemovePetPayload,
@@ -21,6 +21,15 @@ import {
     SendActionResponsePayload,
     SendPetsStateSyncPayload,
 } from "@modules/colyseus/events"
+import {
+    GameRoomColyseusSchema,
+    PetColyseusSchema,
+    PlayerColyseusSchema,
+    PoopColyseusSchema,
+} from "@modules/colyseus/schemas"
+import { MapSchema } from "@colyseus/schema"
+import { PlayerGameService } from "@modules/gameplay/player/player.service"
+import { DEFAULT_PET_PRICE } from "@modules/gameplay/pet/pet.constants"
 
 // Type for sender room methods
 type SenderRoom = {
@@ -32,33 +41,95 @@ type SenderRoom = {
     sendPetsStateSync: (client: Client, payload: SendPetsStateSyncPayload) => void
 }
 
+// Type for state room methods
+type StateRoom = {
+    createPetState: (petId: string, ownerId: string, petType?: string) => PetColyseusSchema
+    addPetToState: (pet: PetColyseusSchema, player: PlayerColyseusSchema) => void
+    removePetFromState: (petId: string, player: PlayerColyseusSchema) => boolean
+    feedPetState: (pet: PetColyseusSchema, foodValue?: number) => void
+    playWithPetState: (pet: PetColyseusSchema, playValue?: number) => void
+    cleanPetState: (pet: PetColyseusSchema, cleanValue?: number) => void
+    getPetStatsSummary: (pet: PetColyseusSchema) => {
+        id: string
+        petType: string
+        hunger: number
+        happiness: number
+        cleanliness: number
+        overallHealth: number
+        lastUpdated: number
+        poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+    }
+}
+
 /**
- * Pet Event Handler - Refactored to use sender.room.ts
- * Flow: Room emits event → This handler listens → Calls service → Service returns result → Handler calls sender.room.ts
+ * Pet Event Handler - Business logic layer
+ * Handles all pet-related game logic directly without calling gameplay services
  */
 @Injectable()
 export class PetEventHandler {
     private readonly logger = new Logger(PetEventHandler.name)
-    constructor(private readonly petGameService: PetGameService) {}
+    constructor(@Inject(forwardRef(() => PlayerGameService)) private readonly playerService: PlayerGameService) {}
 
     @OnEvent(GamePetEvent.BuyRequested)
     async onBuyPet(payload: BuyPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.BuyRequested}`)
         try {
-            const result = await this.petGameService.handleBuyPet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendBuyPetResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            if (payload.isBuyPet) {
+                if (player.tokens < DEFAULT_PET_PRICE) {
+                    const senderRoom = payload.room as unknown as SenderRoom
+                    senderRoom.sendBuyPetResponse(payload.client, {
+                        success: false,
+                        message: "Not enough tokens to buy pet",
+                        error: "Not enough tokens to buy pet",
+                        timestamp: Date.now(),
+                    })
+                    return
+                }
+
+                // Deduct tokens from player in state
+                player.tokens -= DEFAULT_PET_PRICE
+
+                // Sync tokens to DB immediately
+                await this.playerService.syncTokensToDB(player).catch((error) => {
+                    this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
+                })
+            }
+
+            const petId = `${payload.sessionId}-${Date.now()}`
+            const stateRoom = payload.room as unknown as StateRoom
+
+            // Create pet using state management method
+            const newPet = stateRoom.createPetState(petId, player.walletAddress || payload.sessionId, payload.petType)
+
+            // Add pet to state
+            stateRoom.addPetToState(newPet, player)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendBuyPetResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Pet created successfully",
+                data: {
+                    petId: newPet.id,
+                    petType: newPet.petType,
+                    petTypeId: payload.petTypeId,
+                    tokens: player.tokens,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle buy pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -75,20 +146,56 @@ export class PetEventHandler {
     async onRemovePet(payload: RemovePetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.RemoveRequested}`)
         try {
-            const result = await this.petGameService.handleRemovePet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendRemovePetResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            const pet = payload.room.state.pets.get(payload.petId) as PetColyseusSchema
+            if (!pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendRemovePetResponse(payload.client, {
+                    success: false,
+                    message: "Pet not found",
+                    error: "Pet not found",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            const stateRoom = payload.room as unknown as StateRoom
+            const removed = stateRoom.removePetFromState(payload.petId, player)
+
+            if (!removed) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendRemovePetResponse(payload.client, {
+                    success: false,
+                    message: "Cannot remove pet - invalid ownership",
+                    error: "Cannot remove pet - invalid ownership",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendRemovePetResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Pet removed",
+                data: {
+                    petId: payload.petId,
+                    totalPets: player.totalPetsOwned,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle remove pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -105,20 +212,41 @@ export class PetEventHandler {
     async onFeedPet(payload: FeedPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.FeedRequested}`)
         try {
-            const result = await this.petGameService.handleFeedPet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendActionResponse(payload.client, {
+                    success: false,
+                    message: "Cannot feed pet",
+                    error: "Cannot feed pet",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            const stateRoom = payload.room as unknown as StateRoom
+            stateRoom.feedPetState(pet, 25) // Food restores 25 hunger points
+
+            this.refreshPlayerPetReference(player, pet)
+
+            const petStatsSummary = stateRoom.getPetStatsSummary(pet)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendActionResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: `Fed ${payload.foodType} to your pet`,
+                data: {
+                    petId: payload.petId,
+                    petStats: petStatsSummary,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle feed pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -135,20 +263,41 @@ export class PetEventHandler {
     async onPlayPet(payload: PlayPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.PlayRequested}`)
         try {
-            const result = await this.petGameService.handlePlayPet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendActionResponse(payload.client, {
+                    success: false,
+                    message: "Cannot play with pet",
+                    error: "Cannot play with pet",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            const stateRoom = payload.room as unknown as StateRoom
+            stateRoom.playWithPetState(pet, 20)
+
+            this.refreshPlayerPetReference(player, pet)
+
+            const petStatsSummary = stateRoom.getPetStatsSummary(pet)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendActionResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Played with pet",
+                data: {
+                    petId: payload.petId,
+                    petStats: petStatsSummary,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle play pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -165,20 +314,41 @@ export class PetEventHandler {
     async onCleanPet(payload: DirectCleanPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.CleanRequested}`)
         try {
-            const result = await this.petGameService.handleCleanPet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendActionResponse(payload.client, {
+                    success: false,
+                    message: "Cannot clean pet",
+                    error: "Cannot clean pet",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            const stateRoom = payload.room as unknown as StateRoom
+            stateRoom.cleanPetState(pet, 30)
+
+            this.refreshPlayerPetReference(player, pet)
+
+            const petStatsSummary = stateRoom.getPetStatsSummary(pet)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendActionResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Cleaned pet",
+                data: {
+                    petId: payload.petId,
+                    petStats: petStatsSummary,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle clean pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -195,8 +365,20 @@ export class PetEventHandler {
     async onFoodConsumed(payload: FoodConsumedPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.FoodConsumed}`)
         try {
-            await this.petGameService.handleFoodConsumed(payload)
-            // FoodConsumed doesn't need response, it's internal state update
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                return
+            }
+
+            const hunger = Math.min(100, Math.max(0, payload.hungerLevel))
+            pet.hunger = hunger
+            pet.lastUpdated = Date.now()
+
+            this.refreshPlayerPetReference(player, pet)
         } catch (error) {
             this.logger.error(`Failed to handle food consumed: ${error.message}`, error.stack)
         }
@@ -206,20 +388,44 @@ export class PetEventHandler {
     async onCleanedPet(payload: CleanedPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.Cleaned}`)
         try {
-            const result = await this.petGameService.handleCleanedPet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendCleanedPetResponse(payload.client, {
+                    success: false,
+                    message: "Cannot clean pet",
+                    error: "Cannot clean pet",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            pet.cleanliness = Math.min(100, pet.cleanliness + 40)
+            pet.happiness = Math.min(100, pet.happiness + 15)
+            pet.poops = pet.poops.filter((poop) => poop.id !== payload.poopId)
+            pet.lastUpdated = Date.now()
+
+            this.refreshPlayerPetReference(player, pet)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendCleanedPetResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Pet cleaned successfully",
+                data: {
+                    petId: payload.petId,
+                    cleaningItemId: payload.cleaningItemId,
+                    cleanliness: pet.cleanliness,
+                    happiness: pet.happiness,
+                    poopId: payload.poopId,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle cleaned pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -236,20 +442,43 @@ export class PetEventHandler {
     async onPlayedPet(payload: PlayedPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.Played}`)
         try {
-            const result = await this.petGameService.handlePlayedPet(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendActionResponse(payload.client, {
+                    success: false,
+                    message: "Cannot update pet happiness",
+                    error: "Cannot update pet happiness",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            const happiness = Math.min(100, Math.max(0, payload.happinessLevel))
+            pet.happiness = happiness
+            pet.lastUpdated = Date.now()
+
+            this.refreshPlayerPetReference(player, pet)
+
+            const stateRoom = payload.room as unknown as StateRoom
+            const petStatsSummary = stateRoom.getPetStatsSummary(pet)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendActionResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Pet happiness updated",
+                data: {
+                    petId: payload.petId,
+                    petStats: petStatsSummary,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle played pet: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -266,20 +495,48 @@ export class PetEventHandler {
     async onPoopCreated(payload: CreatePoopPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.PoopCreated}`)
         try {
-            const result = await this.petGameService.handleCreatePoop(payload)
-            const senderRoom = payload.room as unknown as SenderRoom
+            const { player, pet } = this.getPlayerAndPet(
+                payload.room.state as GameRoomColyseusSchema,
+                payload.sessionId,
+                payload.petId,
+            )
+            if (!player || !pet) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendCreatePoopResponse(payload.client, {
+                    success: false,
+                    message: "Cannot create poop",
+                    error: "Cannot create poop",
+                    timestamp: Date.now(),
+                })
+                return
+            }
 
+            const poopId = `${payload.petId}-poop-${Date.now()}`
+            const poop = new PoopColyseusSchema()
+            poop.id = poopId
+            poop.petId = payload.petId
+            poop.positionX = payload.positionX
+            poop.positionY = payload.positionY
+
+            pet.poops = [...pet.poops, poop]
+            pet.lastUpdated = Date.now()
+
+            this.refreshPlayerPetReference(player, pet)
+
+            const senderRoom = payload.room as unknown as SenderRoom
             senderRoom.sendCreatePoopResponse(payload.client, {
-                success: result.success,
-                message: result.message,
-                data: result.data,
-                error: result.error,
+                success: true,
+                message: "Created poop",
+                data: {
+                    petId: payload.petId,
+                    poopId,
+                    positionX: payload.positionX,
+                    positionY: payload.positionY,
+                },
                 timestamp: Date.now(),
             })
 
-            if (result.player && result.success) {
-                this.sendPetsStateSync(senderRoom, payload.client, result.player)
-            }
+            this.sendPetsStateSync(senderRoom, payload.client, player)
         } catch (error) {
             this.logger.error(`Failed to handle create poop: ${error.message}`, error.stack)
             const senderRoom = payload.room as unknown as SenderRoom
@@ -292,10 +549,37 @@ export class PetEventHandler {
         }
     }
 
-    private sendPetsStateSync(senderRoom: SenderRoom, client: Client, player: any) {
+    // Helper methods
+    private getPlayer(state: GameRoomColyseusSchema, sessionId: string) {
+        return state.players.get(sessionId)
+    }
+
+    private getPlayerAndPet(state: GameRoomColyseusSchema, sessionId: string, petId: string) {
+        const player = this.getPlayer(state, sessionId)
+        if (!player) {
+            this.logger.warn(`Player ${sessionId} not found in room`)
+            return { player: null, pet: null }
+        }
+        const pet = state.pets.get(petId) as PetColyseusSchema
+        if (!pet) {
+            this.logger.warn(`Pet ${petId} not found for player ${sessionId}`)
+            return { player, pet: null }
+        }
+        return { player, pet }
+    }
+
+    private refreshPlayerPetReference(player: PlayerColyseusSchema, pet: PetColyseusSchema) {
+        if (!player.pets) {
+            player.pets = new MapSchema<PetColyseusSchema>()
+        }
+        player.pets.set(pet.id, pet)
+        player.totalPetsOwned = player.pets.size
+    }
+
+    private sendPetsStateSync(senderRoom: SenderRoom, client: Client, player: PlayerColyseusSchema) {
         const pets = this.mapPetsToArray(player.pets)
         senderRoom.sendPetsStateSync(client, {
-            pets: pets.map((pet: any) => ({
+            pets: pets.map((pet: PetColyseusSchema) => ({
                 id: pet.id,
                 ownerId: pet.ownerId,
                 petType: pet.petType,
@@ -308,10 +592,10 @@ export class PetEventHandler {
         })
     }
 
-    private mapPetsToArray(pets?: Map<string, any>) {
+    private mapPetsToArray(pets?: MapSchema<PetColyseusSchema> | Map<string, PetColyseusSchema>) {
         if (!pets) return []
-        const list: any[] = []
-        pets.forEach((item: any) => list.push(item))
+        const list: PetColyseusSchema[] = []
+        pets.forEach((item: PetColyseusSchema) => list.push(item))
         return list
     }
 }

@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common"
-import { GameplayPetModule } from "@modules/gameplay"
+import { GameplayModule } from "@modules/gameplay"
 import { PetEventHandler } from "./pet.event-handler"
 import { ConfigurableModuleClass } from "./pet.module-definition"
 
 @Module({
-    imports: [GameplayPetModule],
+    imports: [GameplayModule.register({})],
     providers: [PetEventHandler],
     exports: [PetEventHandler],
 })

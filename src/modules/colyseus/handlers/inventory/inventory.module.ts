@@ -1,10 +1,11 @@
 import { Module } from "@nestjs/common"
-import { GameplayInventoryModule } from "@modules/gameplay"
+import { GameplayModule } from "@modules/gameplay"
+import { GameMemdbModule } from "@modules/databases"
 import { InventoryEventHandler } from "./inventory.event-handler"
 import { ConfigurableModuleClass } from "./inventory.module-definition"
 
 @Module({
-    imports: [GameplayInventoryModule],
+    imports: [GameplayModule.register({}), GameMemdbModule.register({})],
     providers: [InventoryEventHandler],
     exports: [InventoryEventHandler],
 })
