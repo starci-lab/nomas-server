@@ -1,8 +1,8 @@
 import { DynamicModule, Module, Provider } from "@nestjs/common"
 import { ConfigurableModuleClass } from "./handlers.module-definition"
-import { createColyseusServerProvider } from "./colyseus.providers"
-import { ColyseusService } from "./colyseus.service"
 import { MixinModule } from "@modules/mixin"
+import { createColyseusServerProvider } from "@modules/colyseus/colyseus.providers"
+import { ColyseusService } from "@modules/colyseus/colyseus.service"
 
 @Module({
     imports: [

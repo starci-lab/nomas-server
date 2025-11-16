@@ -55,9 +55,9 @@ export class GameRoom extends AbstractSenderGameRoom {
 
     // attach nestjs dependencies
     private initializeDependencies() {
+        // Initialize base room dependencies (eventEmitter, dayjsService, retryService)
+        this.initialize()
         this.retryService = this.app.get(RetryService, { strict: false })
-        // Message conversion is now done inline in receiver.room.ts
-        // No need to inject message handlers anymore
     }
 
     // initialize room state

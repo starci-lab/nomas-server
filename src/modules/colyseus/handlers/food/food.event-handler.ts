@@ -9,6 +9,7 @@ import {
     SendFoodInventoryPayload,
     SendFeedResultPayload,
 } from "@modules/colyseus/events"
+import { DayjsService } from "@modules/mixin"
 
 // Type for sender room methods
 type SenderRoom = {
@@ -25,7 +26,10 @@ type SenderRoom = {
 @Injectable()
 export class FoodEventHandler {
     private readonly logger = new Logger(FoodEventHandler.name)
-    constructor(private readonly foodGameService: FoodGameService) {}
+    constructor(
+        private readonly foodGameService: FoodGameService,
+        private readonly dayjsService: DayjsService,
+    ) {}
 
     @OnEvent(GameFoodEvent.PurchaseRequested)
     async onPurchaseFood(payload: PurchaseFoodPayload) {
@@ -73,7 +77,7 @@ export class FoodEventHandler {
             senderRoom.sendStoreCatalog(payload.client, {
                 success: false,
                 error: "Failed to get store catalog",
-                timestamp: Date.now(),
+                timestamp: this.dayjsService.now().unix(),
             })
         }
     }
