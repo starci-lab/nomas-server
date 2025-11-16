@@ -30,8 +30,8 @@ export class PlayerSyncService {
             this.logger.debug(`💾 Synced tokens to DB for player ${player.walletAddress}: ${player.tokens} tokens`)
             return true
         } catch (error) {
-            this.logger.error(
-                `❌ Failed to sync tokens to DB: ${error instanceof Error ? error.message : "Unknown error"}`,
+            this.logger.debug(
+                `Failed to sync tokens to DB: ${error instanceof Error ? error.message : "Unknown error"}`,
             )
             return false
         }

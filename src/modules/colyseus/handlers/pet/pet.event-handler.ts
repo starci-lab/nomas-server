@@ -36,7 +36,6 @@ export class PetEventHandler {
 
     @OnEvent(GamePetEvent.BuyRequested)
     async onBuyPet(payload: BuyPetPayload) {
-        this.logger.debug(`Event received: ${GamePetEvent.BuyRequested}`)
         try {
             const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
             if (!player) {

@@ -5,6 +5,7 @@ import { envConfig } from "@modules/env"
 import { GameRoom } from "./rooms/game"
 import { Client } from "colyseus.js"
 import { sleep } from "@utils"
+import { GameActionReceiveMessage, GameActionSendMessage } from "@modules/colyseus/events"
 
 @Injectable()
 export class ColyseusService implements OnApplicationBootstrap {
@@ -17,7 +18,16 @@ export class ColyseusService implements OnApplicationBootstrap {
         this.server.define("game", GameRoom)
         sleep(5000).then(() => {
             const client = new Client("ws://localhost:2567")
-            client.joinOrCreate("game")
+            client.joinOrCreate("game").then((room) => {
+                room.send(GameActionReceiveMessage.BuyPet, {
+                    petType: "dog",
+                    petTypeId: 1,
+                    isBuyPet: true,
+                })
+                room.onMessage(GameActionSendMessage.BuyPetResponse, (message) => {
+                    console.log("🎉 Received buy pet response message:", message)
+                })
+            })
         })
     }
 }
