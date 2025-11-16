@@ -1,4 +1,3 @@
-export * from "./food.message-handlers"
 export * from "./food.event-handler"
 export * from "./food.module"
-export * from "./food.room-handlers"
+export * from "./types"

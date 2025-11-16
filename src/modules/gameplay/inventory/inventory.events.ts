@@ -4,6 +4,8 @@ import type { GameRoom } from "@modules/colyseus/rooms/game"
 export enum GameInventoryEvent {
     PurchaseItemRequested = "game.inventory.purchaseItemRequested",
     GetInventoryRequested = "game.inventory.getInventoryRequested",
+    PurchaseItemResponse = "game.inventory.purchaseItemResponse",
+    GetInventoryResponse = "game.inventory.getInventoryResponse",
 }
 
 export interface InventoryEventBasePayload {
@@ -19,5 +21,19 @@ export interface PurchaseInventoryItemPayload extends InventoryEventBasePayload 
 }
 
 export interface GetInventoryPayload extends InventoryEventBasePayload {}
+
+// Response event payloads
+export interface InventoryResponseBasePayload {
+    client: Client
+    sessionId: string
+}
+
+export interface PurchaseInventoryItemResponsePayload extends InventoryResponseBasePayload {
+    result: import("./inventory.results").PurchaseInventoryItemResult
+}
+
+export interface GetInventoryResponsePayload extends InventoryResponseBasePayload {
+    result: import("./inventory.results").GetInventoryResult
+}
 
 export type AnyInventoryEventPayload = PurchaseInventoryItemPayload | GetInventoryPayload

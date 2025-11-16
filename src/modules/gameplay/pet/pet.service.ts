@@ -1,8 +1,12 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import { MapSchema } from "@colyseus/schema"
-import { Client } from "colyseus"
-import { GameRoomColyseusSchema, PetColyseusSchema, PlayerColyseusSchema, PoopColyseusSchema } from "@modules/colyseus/schemas"
-import { GameActionMessages, GamePetMessages, DEFAULT_PET_PRICE } from "./pet.constants"
+import {
+    GameRoomColyseusSchema,
+    PetColyseusSchema,
+    PlayerColyseusSchema,
+    PoopColyseusSchema,
+} from "@modules/colyseus/schemas"
+import { DEFAULT_PET_PRICE } from "./pet.constants"
 import {
     BuyPetPayload,
     CleanedPetPayload,
@@ -14,52 +18,86 @@ import {
     PlayedPetPayload,
     RemovePetPayload,
 } from "./pet.events"
-
-type ActionResponsePayload = {
-    success: boolean
-    message: string
-    data?: Record<string, unknown>
-}
+import {
+    BuyPetResult,
+    RemovePetResult,
+    FeedPetResult,
+    PlayPetResult,
+    CleanPetResult,
+    CleanedPetResult,
+    CreatePoopResult,
+} from "./pet.results"
+import { PlayerGameService } from "../player/player.service"
 
 @Injectable()
 export class PetGameService {
     private readonly logger = new Logger(PetGameService.name)
 
-    async handleBuyPet({ room, client, sessionId, petType, petTypeId, isBuyPet }: BuyPetPayload) {
+    constructor(@Inject(forwardRef(() => PlayerGameService)) private playerService: PlayerGameService) {}
+
+    async handleBuyPet({ room, sessionId, petType, petTypeId, isBuyPet }: BuyPetPayload): Promise<BuyPetResult> {
         const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
-            this.sendActionResponse(client, GameActionMessages.BUY_PET_RESPONSE, {
+            return {
                 success: false,
                 message: "Player not found in room",
-            })
-            return
+                error: "Player not found in room",
+            }
         }
 
         if (isBuyPet) {
             if (player.tokens < DEFAULT_PET_PRICE) {
-                this.sendActionResponse(client, GameActionMessages.BUY_PET_RESPONSE, {
+                return {
                     success: false,
                     message: "Not enough tokens to buy pet",
-                })
-                return
+                    error: "Not enough tokens to buy pet",
+                    player,
+                }
             }
+
+            // Deduct tokens from player in state
             player.tokens -= DEFAULT_PET_PRICE
+
+            // Sync tokens to DB immediately (tokens must be synced immediately for data integrity)
+            await this.playerService.syncTokensToDB(player).catch((error) => {
+                this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
+                // Continue even if sync fails - state is already updated
+            })
         }
 
         const petId = `${sessionId}-${Date.now()}`
-        const newPet = this.createPet({
-            id: petId,
-            ownerId: player.walletAddress || sessionId,
-            petType,
-        })
-        if (!player.pets) {
-            player.pets = new MapSchema<PetColyseusSchema>()
-        }
-        player.pets.set(newPet.id, newPet)
-        room.state.pets.set(newPet.id, newPet)
-        player.totalPetsOwned = player.pets.size
 
-        this.sendActionResponse(client, GameActionMessages.BUY_PET_RESPONSE, {
+        // Use state management method from AbstractPetStateGameRoom
+        const stateRoom = room as unknown as {
+            createPetState: (petId: string, ownerId: string, petType?: string) => PetColyseusSchema
+            addPetToState: (pet: PetColyseusSchema, player: PlayerColyseusSchema) => void
+        }
+
+        let newPet: PetColyseusSchema
+        if (stateRoom.createPetState) {
+            newPet = stateRoom.createPetState(petId, player.walletAddress || sessionId, petType)
+        } else {
+            newPet = this.createPet({
+                id: petId,
+                ownerId: player.walletAddress || sessionId,
+                petType,
+            })
+        }
+
+        // Use state management method to add pet
+        if (stateRoom.addPetToState) {
+            stateRoom.addPetToState(newPet, player)
+        } else {
+            // Fallback
+            if (!player.pets) {
+                player.pets = new MapSchema<PetColyseusSchema>()
+            }
+            player.pets.set(newPet.id, newPet)
+            room.state.pets.set(newPet.id, newPet)
+            player.totalPetsOwned = player.pets.size
+        }
+
+        return {
             success: true,
             message: "Pet created successfully",
             data: {
@@ -68,123 +106,252 @@ export class PetGameService {
                 petTypeId,
                 tokens: player.tokens,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+            pet: newPet,
+        }
     }
 
-    async handleRemovePet({ room, client, sessionId, petId }: RemovePetPayload) {
+    async handleRemovePet({ room, sessionId, petId }: RemovePetPayload): Promise<RemovePetResult> {
         const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
-            return
+            return {
+                success: false,
+                message: "Player not found in room",
+                error: "Player not found in room",
+            }
         }
 
         const pet = room.state.pets.get(petId) as PetColyseusSchema
         if (!pet) {
-            this.sendActionResponse(client, GameActionMessages.REMOVE_PET_RESPONSE, {
+            return {
                 success: false,
                 message: "Pet not found",
-            })
-            return
+                error: "Pet not found",
+                player,
+            }
         }
 
-        room.state.pets.delete(petId)
-        if (player.pets) {
-            player.pets.delete(petId)
+        // Use state management method from AbstractPetStateGameRoom
+        const stateRoom = room as unknown as {
+            removePetFromState: (petId: string, player: PlayerColyseusSchema) => boolean
         }
-        player.totalPetsOwned = player.pets?.size ?? 0
 
-        this.sendActionResponse(client, GameActionMessages.REMOVE_PET_RESPONSE, {
+        let removed = false
+        if (stateRoom.removePetFromState) {
+            removed = stateRoom.removePetFromState(petId, player)
+        } else {
+            // Fallback
+            room.state.pets.delete(petId)
+            if (player.pets) {
+                player.pets.delete(petId)
+            }
+            player.totalPetsOwned = player.pets?.size ?? 0
+            removed = true
+        }
+
+        if (!removed) {
+            return {
+                success: false,
+                message: "Cannot remove pet - invalid ownership",
+                error: "Cannot remove pet - invalid ownership",
+                player,
+            }
+        }
+
+        return {
             success: true,
             message: "Pet removed",
             data: {
                 petId,
                 totalPets: player.totalPetsOwned,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
-    async handleFeedPet({ room, client, sessionId, petId, foodType }: FeedPetPayload) {
+    async handleFeedPet({ room, sessionId, petId, foodType }: FeedPetPayload): Promise<FeedPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
-            this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+            return {
                 success: false,
                 message: "Cannot feed pet",
-            })
-            return
+                error: "Cannot feed pet",
+            }
         }
 
-        pet.hunger = Math.min(100, pet.hunger + 25)
-        pet.happiness = Math.min(100, pet.happiness + 10)
-        pet.lastUpdated = Date.now()
+        // Use state management method from AbstractPetStateGameRoom
+        const stateRoom = room as unknown as { feedPetState: (pet: PetColyseusSchema, foodValue?: number) => void }
+        if (stateRoom.feedPetState) {
+            stateRoom.feedPetState(pet, 25) // Food restores 25 hunger points
+        } else {
+            // Fallback to direct update if method not available
+            pet.hunger = Math.min(100, pet.hunger + 25)
+            pet.happiness = Math.min(100, pet.happiness + 12.5)
+            pet.lastUpdated = Date.now()
+        }
 
         this.refreshPlayerPetReference(player, pet)
-        this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+
+        // Get pet stats summary using state management
+        const stateRoomWithStats = room as unknown as {
+            getPetStatsSummary: (pet: PetColyseusSchema) => {
+                id: string
+                petType: string
+                hunger: number
+                happiness: number
+                cleanliness: number
+                overallHealth: number
+                lastUpdated: number
+                poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+            }
+        }
+
+        let petStatsSummary
+        if (stateRoomWithStats.getPetStatsSummary) {
+            petStatsSummary = stateRoomWithStats.getPetStatsSummary(pet)
+        } else {
+            petStatsSummary = {
+                id: pet.id,
+                petType: pet.petType,
+                hunger: Math.round(pet.hunger),
+                happiness: Math.round(pet.happiness),
+                cleanliness: Math.round(pet.cleanliness || 100),
+                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                lastUpdated: pet.lastUpdated,
+                poops: pet.poops || [],
+            }
+        }
+
+        return {
             success: true,
             message: `Fed ${foodType} to your pet`,
             data: {
                 petId,
-                hunger: pet.hunger,
-                happiness: pet.happiness,
+                petStats: petStatsSummary,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
-    async handlePlayPet({ room, client, sessionId, petId }: PlayPetPayload) {
+    async handlePlayPet({ room, sessionId, petId }: PlayPetPayload): Promise<PlayPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
-            this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+            return {
                 success: false,
                 message: "Cannot play with pet",
-            })
-            return
+                error: "Cannot play with pet",
+            }
         }
 
-        pet.happiness = Math.min(100, pet.happiness + 20)
-        pet.lastUpdated = Date.now()
+        // Use state management method from AbstractPetStateGameRoom
+        const stateRoom = room as unknown as { playWithPetState: (pet: PetColyseusSchema, playValue?: number) => void }
+        if (stateRoom.playWithPetState) {
+            stateRoom.playWithPetState(pet, 20)
+        } else {
+            // Fallback
+            pet.happiness = Math.min(100, pet.happiness + 20)
+            pet.lastUpdated = Date.now()
+        }
 
         this.refreshPlayerPetReference(player, pet)
-        this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+
+        // Get pet stats summary using state management
+        const stateRoomWithStats = room as unknown as {
+            getPetStatsSummary: (pet: PetColyseusSchema) => {
+                id: string
+                petType: string
+                hunger: number
+                happiness: number
+                cleanliness: number
+                overallHealth: number
+                lastUpdated: number
+                poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+            }
+        }
+
+        const petStatsSummary = stateRoomWithStats.getPetStatsSummary
+            ? stateRoomWithStats.getPetStatsSummary(pet)
+            : {
+                  id: pet.id,
+                  petType: pet.petType,
+                  hunger: Math.round(pet.hunger),
+                  happiness: Math.round(pet.happiness),
+                  cleanliness: Math.round(pet.cleanliness || 100),
+                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                  lastUpdated: pet.lastUpdated,
+                  poops: pet.poops || [],
+              }
+
+        return {
             success: true,
             message: "Played with pet",
             data: {
                 petId,
-                happiness: pet.happiness,
+                petStats: petStatsSummary,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
-    async handleCleanPet({ room, client, sessionId, petId }: DirectCleanPetPayload) {
+    async handleCleanPet({ room, sessionId, petId }: DirectCleanPetPayload): Promise<CleanPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
-            this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+            return {
                 success: false,
                 message: "Cannot clean pet",
-            })
-            return
+                error: "Cannot clean pet",
+            }
         }
 
-        pet.cleanliness = Math.min(100, pet.cleanliness + 30)
-        pet.happiness = Math.min(100, pet.happiness + 10)
-        pet.lastUpdated = Date.now()
+        // Use state management method from AbstractPetStateGameRoom
+        const stateRoom = room as unknown as { cleanPetState: (pet: PetColyseusSchema, cleanValue?: number) => void }
+        if (stateRoom.cleanPetState) {
+            stateRoom.cleanPetState(pet, 30)
+        } else {
+            // Fallback
+            pet.cleanliness = Math.min(100, pet.cleanliness + 30)
+            pet.happiness = Math.min(100, pet.happiness + 9)
+            pet.lastUpdated = Date.now()
+        }
 
         this.refreshPlayerPetReference(player, pet)
-        this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+
+        // Get pet stats summary using state management
+        const stateRoomWithStats = room as unknown as {
+            getPetStatsSummary: (pet: PetColyseusSchema) => {
+                id: string
+                petType: string
+                hunger: number
+                happiness: number
+                cleanliness: number
+                overallHealth: number
+                lastUpdated: number
+                poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+            }
+        }
+
+        const petStatsSummary = stateRoomWithStats.getPetStatsSummary
+            ? stateRoomWithStats.getPetStatsSummary(pet)
+            : {
+                  id: pet.id,
+                  petType: pet.petType,
+                  hunger: Math.round(pet.hunger),
+                  happiness: Math.round(pet.happiness),
+                  cleanliness: Math.round(pet.cleanliness || 100),
+                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                  lastUpdated: pet.lastUpdated,
+                  poops: pet.poops || [],
+              }
+
+        return {
             success: true,
             message: "Cleaned pet",
             data: {
                 petId,
-                cleanliness: pet.cleanliness,
+                petStats: petStatsSummary,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
     async handleFoodConsumed({ room, sessionId, petId, hungerLevel }: FoodConsumedPayload) {
@@ -200,14 +367,20 @@ export class PetGameService {
         this.refreshPlayerPetReference(player, pet)
     }
 
-    async handleCleanedPet({ room, client, sessionId, petId, cleaningItemId, poopId }: CleanedPetPayload) {
+    async handleCleanedPet({
+        room,
+        sessionId,
+        petId,
+        cleaningItemId,
+        poopId,
+    }: CleanedPetPayload): Promise<CleanedPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
-            this.sendActionResponse(client, GameActionMessages.CLEANED_PET_RESPONSE, {
+            return {
                 success: false,
                 message: "Cannot clean pet",
-            })
-            return
+                error: "Cannot clean pet",
+            }
         }
 
         pet.cleanliness = Math.min(100, pet.cleanliness + 40)
@@ -216,7 +389,8 @@ export class PetGameService {
         pet.lastUpdated = Date.now()
 
         this.refreshPlayerPetReference(player, pet)
-        this.sendActionResponse(client, GameActionMessages.CLEANED_PET_RESPONSE, {
+
+        return {
             success: true,
             message: "Pet cleaned successfully",
             data: {
@@ -226,19 +400,18 @@ export class PetGameService {
                 happiness: pet.happiness,
                 poopId,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
-    async handlePlayedPet({ room, client, sessionId, petId, happinessLevel }: PlayedPetPayload) {
+    async handlePlayedPet({ room, sessionId, petId, happinessLevel }: PlayedPetPayload): Promise<PlayPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
-            this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+            return {
                 success: false,
                 message: "Cannot update pet happiness",
-            })
-            return
+                error: "Cannot update pet happiness",
+            }
         }
 
         const happiness = Math.min(100, Math.max(0, happinessLevel))
@@ -246,26 +419,59 @@ export class PetGameService {
         pet.lastUpdated = Date.now()
 
         this.refreshPlayerPetReference(player, pet)
-        this.sendActionResponse(client, GameActionMessages.RESPONSE, {
+
+        // Get pet stats summary
+        const stateRoomWithStats = room as unknown as {
+            getPetStatsSummary: (pet: PetColyseusSchema) => {
+                id: string
+                petType: string
+                hunger: number
+                happiness: number
+                cleanliness: number
+                overallHealth: number
+                lastUpdated: number
+                poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
+            }
+        }
+
+        const petStatsSummary = stateRoomWithStats.getPetStatsSummary
+            ? stateRoomWithStats.getPetStatsSummary(pet)
+            : {
+                  id: pet.id,
+                  petType: pet.petType,
+                  hunger: Math.round(pet.hunger),
+                  happiness: Math.round(pet.happiness),
+                  cleanliness: Math.round(pet.cleanliness || 100),
+                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                  lastUpdated: pet.lastUpdated,
+                  poops: pet.poops || [],
+              }
+
+        return {
             success: true,
             message: "Pet happiness updated",
             data: {
                 petId,
-                happiness,
+                petStats: petStatsSummary,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
-    async handleCreatePoop({ room, client, sessionId, petId, positionX, positionY }: CreatePoopPayload) {
+    async handleCreatePoop({
+        room,
+        sessionId,
+        petId,
+        positionX,
+        positionY,
+    }: CreatePoopPayload): Promise<CreatePoopResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
-            this.sendActionResponse(client, GameActionMessages.CREATE_POOP_RESPONSE, {
+            return {
                 success: false,
                 message: "Cannot create poop",
-            })
-            return
+                error: "Cannot create poop",
+            }
         }
 
         const poopId = `${petId}-poop-${Date.now()}`
@@ -279,7 +485,8 @@ export class PetGameService {
         pet.lastUpdated = Date.now()
 
         this.refreshPlayerPetReference(player, pet)
-        this.sendActionResponse(client, GameActionMessages.CREATE_POOP_RESPONSE, {
+
+        return {
             success: true,
             message: "Created poop",
             data: {
@@ -288,9 +495,8 @@ export class PetGameService {
                 positionX,
                 positionY,
             },
-        })
-
-        this.sendPetsStateSync(client, player)
+            player,
+        }
     }
 
     private getPlayer(state: GameRoomColyseusSchema, sessionId: string) {
@@ -313,6 +519,8 @@ export class PetGameService {
     }
 
     private createPet({ id, ownerId, petType }: { id: string; ownerId: string; petType?: string }) {
+        // Use state management method from AbstractPetStateGameRoom if available
+        // For now, create directly as we don't have room instance here
         const pet = new PetColyseusSchema()
         pet.id = id
         pet.ownerId = ownerId
@@ -331,22 +539,6 @@ export class PetGameService {
         }
         player.pets.set(pet.id, pet)
         player.totalPetsOwned = player.pets.size
-    }
-
-    private sendPetsStateSync(client: Client, player: PlayerColyseusSchema) {
-        const pets = this.mapSchemaToArray(player.pets)
-        client.send(GamePetMessages.STATE_SYNC, {
-            pets,
-        })
-    }
-
-    private sendActionResponse(client: Client, messageType: string, payload: ActionResponsePayload) {
-        client.send(messageType, {
-            success: payload.success,
-            message: payload.message,
-            data: payload.data ?? {},
-            timestamp: Date.now(),
-        })
     }
 
     private mapSchemaToArray(map?: MapSchema<PetColyseusSchema>) {

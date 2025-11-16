@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { OnEvent } from "@nestjs/event-emitter"
-import { PlayerGameService, GamePlayerEvent } from "@modules/gameplay"
+import { Client } from "colyseus"
+import { GamePlayerEvent } from "@modules/colyseus/events"
 import {
     GetGameConfigPayload,
     GetPlayerStatePayload,
@@ -9,21 +10,60 @@ import {
     ClaimDailyRewardPayload,
     UpdateSettingsPayload,
     UpdateTutorialPayload,
-} from "@modules/gameplay"
+} from "./types"
+import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import {
+    SendGameConfigResponsePayload,
+    SendPlayerStateResponsePayload,
+    SendProfileResponsePayload,
+    SendPetsStateResponsePayload,
+    SendDailyRewardResponsePayload,
+    SendSettingsResponsePayload,
+    SendTutorialResponsePayload,
+} from "@modules/colyseus/events"
 
+// Type for sender room methods
+type SenderRoom = {
+    sendGameConfigResponse: (client: Client, payload: SendGameConfigResponsePayload) => void
+    sendPlayerStateResponse: (client: Client, payload: SendPlayerStateResponsePayload) => void
+    sendProfileResponse: (client: Client, payload: SendProfileResponsePayload) => void
+    sendPetsStateResponse: (client: Client, payload: SendPetsStateResponsePayload) => void
+    sendDailyRewardResponse: (client: Client, payload: SendDailyRewardResponsePayload) => void
+    sendSettingsResponse: (client: Client, payload: SendSettingsResponsePayload) => void
+    sendTutorialResponse: (client: Client, payload: SendTutorialResponsePayload) => void
+}
+
+/**
+ * Player Event Handler - Business logic layer
+ * Handles all player-related game logic directly without calling gameplay services
+ */
 @Injectable()
 export class PlayerEventHandler {
     private readonly logger = new Logger(PlayerEventHandler.name)
-    constructor(private readonly playerGameService: PlayerGameService) {}
 
     @OnEvent(GamePlayerEvent.GetGameConfigRequested)
     async onGetGameConfig(payload: GetGameConfigPayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.GetGameConfigRequested}`)
         try {
-            await this.playerGameService.handleGetGameConfig(payload)
+            // TODO: Implement get game config logic
+            this.logger.warn("Get game config not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendGameConfigResponse(payload.client, {
+                success: true,
+                config: {},
+                message: "Game config retrieved",
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle get game config: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendGameConfigResponse(payload.client, {
+                success: false,
+                message: "Failed to get game config",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
     }
 
@@ -31,10 +71,37 @@ export class PlayerEventHandler {
     async onGetPlayerState(payload: GetPlayerStatePayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.GetPlayerStateRequested}`)
         try {
-            await this.playerGameService.handleGetPlayerState(payload)
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendPlayerStateResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            // TODO: Implement get player state logic
+            this.logger.warn("Get player state not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendPlayerStateResponse(payload.client, {
+                success: true,
+                message: "Get player state (placeholder)",
+                data: { player },
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle get player state: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendPlayerStateResponse(payload.client, {
+                success: false,
+                message: "Failed to get player state",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
     }
 
@@ -42,10 +109,37 @@ export class PlayerEventHandler {
     async onGetProfile(payload: GetProfilePayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.GetProfileRequested}`)
         try {
-            await this.playerGameService.handleGetProfile(payload)
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendProfileResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            // TODO: Implement get profile logic
+            this.logger.warn("Get profile not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendProfileResponse(payload.client, {
+                success: true,
+                message: "Get profile (placeholder)",
+                data: { profile: {} },
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle get profile: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendProfileResponse(payload.client, {
+                success: false,
+                message: "Failed to get profile",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
     }
 
@@ -53,10 +147,37 @@ export class PlayerEventHandler {
     async onGetPetsState(payload: GetPetsStatePayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.GetPetsStateRequested}`)
         try {
-            await this.playerGameService.handleGetPetsState(payload)
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendPetsStateResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            // TODO: Implement get pets state logic
+            this.logger.warn("Get pets state not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendPetsStateResponse(payload.client, {
+                success: true,
+                message: "Get pets state (placeholder)",
+                data: { pets: [] },
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle get pets state: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendPetsStateResponse(payload.client, {
+                success: false,
+                message: "Failed to get pets state",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
     }
 
@@ -64,10 +185,37 @@ export class PlayerEventHandler {
     async onClaimDailyReward(payload: ClaimDailyRewardPayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.ClaimDailyRewardRequested}`)
         try {
-            await this.playerGameService.handleClaimDailyReward(payload)
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendDailyRewardResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            // TODO: Implement claim daily reward logic
+            this.logger.warn("Claim daily reward not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendDailyRewardResponse(payload.client, {
+                success: true,
+                message: "Claim daily reward (placeholder)",
+                data: {},
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle claim daily reward: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendDailyRewardResponse(payload.client, {
+                success: false,
+                message: "Failed to claim daily reward",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
     }
 
@@ -75,10 +223,37 @@ export class PlayerEventHandler {
     async onUpdateSettings(payload: UpdateSettingsPayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.UpdateSettingsRequested}`)
         try {
-            await this.playerGameService.handleUpdateSettings(payload)
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendSettingsResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            // TODO: Implement update settings logic
+            this.logger.warn("Update settings not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendSettingsResponse(payload.client, {
+                success: true,
+                message: "Update settings (placeholder)",
+                data: { settings: payload.settings || {} },
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle update settings: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendSettingsResponse(payload.client, {
+                success: false,
+                message: "Failed to update settings",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
     }
 
@@ -86,10 +261,42 @@ export class PlayerEventHandler {
     async onUpdateTutorial(payload: UpdateTutorialPayload) {
         this.logger.debug(`Event received: ${GamePlayerEvent.UpdateTutorialRequested}`)
         try {
-            await this.playerGameService.handleUpdateTutorial(payload)
+            const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
+            if (!player) {
+                const senderRoom = payload.room as unknown as SenderRoom
+                senderRoom.sendTutorialResponse(payload.client, {
+                    success: false,
+                    message: "Player not found in room",
+                    error: "Player not found in room",
+                    timestamp: Date.now(),
+                })
+                return
+            }
+
+            // TODO: Implement update tutorial logic
+            this.logger.warn("Update tutorial not yet implemented")
+
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendTutorialResponse(payload.client, {
+                success: true,
+                message: "Update tutorial (placeholder)",
+                data: { tutorialData: payload.tutorialData || {} },
+                timestamp: Date.now(),
+            })
         } catch (error) {
             this.logger.error(`Failed to handle update tutorial: ${error.message}`, error.stack)
-            throw error
+            const senderRoom = payload.room as unknown as SenderRoom
+            senderRoom.sendTutorialResponse(payload.client, {
+                success: false,
+                message: "Failed to update tutorial",
+                error: error instanceof Error ? error.message : "Unknown error",
+                timestamp: Date.now(),
+            })
         }
+    }
+
+    // Helper methods
+    private getPlayer(state: GameRoomColyseusSchema, sessionId: string): PlayerColyseusSchema | undefined {
+        return state.players.get(sessionId)
     }
 }

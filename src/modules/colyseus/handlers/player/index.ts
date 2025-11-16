@@ -1,4 +1,4 @@
-export * from "./player.message-handlers"
 export * from "./player.event-handler"
 export * from "./player.module"
-export * from "./player.room-handlers"
+export * from "./player-sync.service"
+export * from "./types"

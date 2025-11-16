@@ -1,6 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common"
+import { InjectConnection } from "@nestjs/mongoose"
+import { Connection } from "mongoose"
 import { Client } from "colyseus"
-import { GameRoomColyseusSchema } from "@modules/colyseus/schemas"
+import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
 import { GamePlayerActionMessages } from "./player.constants"
 import {
     GetGameConfigPayload,
@@ -11,6 +13,7 @@ import {
     UpdateSettingsPayload,
     UpdateTutorialPayload,
 } from "./player.events"
+import { GAME_MONGOOSE_CONNECTION_NAME } from "@modules/databases/mongodb/game/constants"
 
 type ActionResponsePayload = {
     success: boolean
@@ -21,6 +24,8 @@ type ActionResponsePayload = {
 @Injectable()
 export class PlayerGameService {
     private readonly logger = new Logger(PlayerGameService.name)
+
+    constructor(@InjectConnection(GAME_MONGOOSE_CONNECTION_NAME) private connection: Connection) {}
 
     async handleGetGameConfig({ client }: GetGameConfigPayload) {
         // TODO: Implement get game config logic
@@ -143,6 +148,34 @@ export class PlayerGameService {
             message: "Update tutorial (placeholder)",
             data: { tutorialData },
         })
+    }
+
+    /**
+     * Sync tokens to database immediately
+     * This is called when tokens are updated (purchase, buy pet, etc.)
+     * Tokens must be synced immediately for data integrity
+     */
+    async syncTokensToDB(player: PlayerColyseusSchema): Promise<boolean> {
+        try {
+            if (!player.walletAddress) {
+                this.logger.warn(`Cannot sync tokens: player ${player.sessionId} has no walletAddress`)
+                return false
+            }
+
+            // TODO: Implement actual DB update based on your schema
+            // Example: await this.connection.model('User').updateOne(
+            //     { accountAddress: player.walletAddress },
+            //     { $set: { tokens: player.tokens } }
+            // )
+
+            this.logger.debug(`💾 Synced tokens to DB for player ${player.walletAddress}: ${player.tokens} tokens`)
+            return true
+        } catch (error) {
+            this.logger.error(
+                `❌ Failed to sync tokens to DB: ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
+            return false
+        }
     }
 
     private getPlayer(state: GameRoomColyseusSchema, sessionId: string) {

@@ -1,6 +1,6 @@
 import type { Client } from "colyseus"
 import type { GameRoom } from "@modules/colyseus/rooms/game"
-import type { Pet } from "@modules/colyseus/schemas"
+import type { PetColyseusSchema } from "@modules/colyseus/schemas"
 
 export enum GamePetEvent {
     BuyRequested = "game.pet.buyRequested",
@@ -77,5 +77,5 @@ export type AnyPetEventPayload =
     | CreatePoopPayload
 
 export interface PetsSyncedPayload {
-    pets: Pet[]
+    pets: PetColyseusSchema[]
 }

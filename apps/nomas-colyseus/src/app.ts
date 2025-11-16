@@ -6,7 +6,6 @@ import { ThrottlerModule } from "@modules/throttler"
 import { PassportModule } from "@modules/passport"
 import { BlockchainModule } from "@modules/blockchain"
 import { ColyseusModule } from "@modules/colyseus"
-import { GameplayNamespaceModule } from "./gameplay"
 import { EventModule } from "@modules/event"
 import { GameplayModule } from "@modules/gameplay"
 
@@ -41,7 +40,6 @@ import { GameplayModule } from "@modules/gameplay"
             isGlobal: true,
         }),
         ColyseusModule.forRoot(),
-        GameplayNamespaceModule,
     ],
     providers: [],
 })
