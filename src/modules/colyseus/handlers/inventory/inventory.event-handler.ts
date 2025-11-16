@@ -12,18 +12,7 @@ import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSche
 import { PlayerGameService } from "@modules/gameplay/player/player.service"
 import { MemdbStorageService } from "@modules/databases"
 import { StoreItemSchema } from "@modules/databases/mongodb/game/schemas/store-item.schema"
-
-interface InventorySummary {
-    totalItems: number
-    itemsByType: Record<string, number>
-    items: Array<{
-        type: string
-        id: string
-        name: string
-        quantity: number
-        totalPurchased: number
-    }>
-}
+import { InventorySummary } from "./types"
 
 /**
  * Inventory Event Handler - Business logic layer
