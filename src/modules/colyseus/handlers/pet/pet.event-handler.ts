@@ -22,8 +22,8 @@ import {
     PoopColyseusSchema,
 } from "@modules/colyseus/schemas"
 import { MapSchema } from "@colyseus/schema"
-import { PlayerGameService } from "@modules/gameplay/player/player.service"
-import { DEFAULT_PET_PRICE } from "@modules/gameplay/pet/pet.constants"
+import { PlayerSyncService } from "../player-sync.service"
+import { DEFAULT_PET_PRICE } from "../constants"
 
 /**
  * Pet Event Handler - Business logic layer
@@ -32,7 +32,7 @@ import { DEFAULT_PET_PRICE } from "@modules/gameplay/pet/pet.constants"
 @Injectable()
 export class PetEventHandler {
     private readonly logger = new Logger(PetEventHandler.name)
-    constructor(@Inject(forwardRef(() => PlayerGameService)) private readonly playerService: PlayerGameService) {}
+    constructor(@Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService) {}
 
     @OnEvent(GamePetEvent.BuyRequested)
     async onBuyPet(payload: BuyPetPayload) {
@@ -66,7 +66,7 @@ export class PetEventHandler {
                 player.tokens -= DEFAULT_PET_PRICE
 
                 // Sync tokens to DB immediately
-                await this.playerService.syncTokensToDB(player).catch((error) => {
+                await this.playerSyncService.syncTokensToDB(player).catch((error) => {
                     this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
                 })
             }

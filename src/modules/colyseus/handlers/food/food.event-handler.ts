@@ -25,7 +25,7 @@ import {
     PetColyseusSchema,
     InventoryItemColyseusSchema,
 } from "@modules/colyseus/schemas"
-import { PlayerGameService } from "@modules/gameplay/player/player.service"
+import { PlayerSyncService } from "../player-sync.service"
 
 /**
  * Food Event Handler - Business logic layer
@@ -35,7 +35,7 @@ import { PlayerGameService } from "@modules/gameplay/player/player.service"
 export class FoodEventHandler {
     private readonly logger = new Logger(FoodEventHandler.name)
     constructor(
-        @Inject(forwardRef(() => PlayerGameService)) private readonly playerService: PlayerGameService,
+        @Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService,
         private readonly eventEmitter: EventEmitter2,
     ) {}
 
@@ -100,7 +100,7 @@ export class FoodEventHandler {
                         player.tokens -= totalCost
 
                         // Sync tokens to DB immediately
-                        await this.playerService.syncTokensToDB(player).catch((error) => {
+                        await this.playerSyncService.syncTokensToDB(player).catch((error) => {
                             this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
                         })
 

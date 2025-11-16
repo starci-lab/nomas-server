@@ -12,9 +12,8 @@ import {
     InventorySummary,
 } from "./types"
 import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSchema } from "@modules/colyseus/schemas"
-import { PlayerGameService } from "@modules/gameplay/player/player.service"
-import { MemdbStorageService } from "@modules/databases"
-import { StoreItemSchema } from "@modules/databases/mongodb/game/schemas/store-item.schema"
+import { PlayerSyncService } from "../player-sync.service"
+import { MemdbStorageService, StoreItemSchema } from "@modules/databases"
 
 /**
  * Inventory Event Handler - Business logic layer
@@ -24,7 +23,7 @@ import { StoreItemSchema } from "@modules/databases/mongodb/game/schemas/store-i
 export class InventoryEventHandler {
     private readonly logger = new Logger(InventoryEventHandler.name)
     constructor(
-        @Inject(forwardRef(() => PlayerGameService)) private readonly playerService: PlayerGameService,
+        @Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService,
         private readonly memdbStorageService: MemdbStorageService,
         private readonly eventEmitter: EventEmitter2,
     ) {}
@@ -74,7 +73,7 @@ export class InventoryEventHandler {
                             player.tokens -= price
 
                             // Sync tokens to DB immediately
-                            await this.playerService.syncTokensToDB(player).catch((error) => {
+                            await this.playerSyncService.syncTokensToDB(player).catch((error) => {
                                 this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
                             })
 

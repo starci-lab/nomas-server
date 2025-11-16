@@ -1,11 +1,10 @@
 import { Module } from "@nestjs/common"
-import { GameplayModule } from "@modules/gameplay"
 import { PetEventHandler } from "./pet.event-handler"
 import { ConfigurableModuleClass } from "./pet.module-definition"
+import { PlayerSyncService } from "../player-sync.service"
 
 @Module({
-    imports: [GameplayModule.register({})],
-    providers: [PetEventHandler],
+    providers: [PetEventHandler, PlayerSyncService],
     exports: [PetEventHandler],
 })
 export class PetHandlersModule extends ConfigurableModuleClass {}
