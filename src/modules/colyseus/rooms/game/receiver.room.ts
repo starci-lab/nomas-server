@@ -2,11 +2,7 @@ import {
     GameActionReceiveMessage,
     GameActionRequestMessage,
     ReceiveBuyPetPayload,
-    ReceiveGetCatalogPayload,
-    ReceiveGetInventoryPayload,
     ReceiveBuyFoodPayload,
-    ReceiveGetStoreCatalogPayload,
-    ReceiveGetFoodInventoryPayload,
     ReceiveFeedPetPayload,
     ReceivePurchaseItemPayload,
     ReceiveRequestGameConfigPayload,
@@ -17,88 +13,131 @@ import {
     ReceiveUpdateSettingsPayload,
     ReceiveUpdateTutorialPayload,
 } from "@modules/colyseus/events"
-import { AbstractStateManagementGameRoom } from "./state-management.room"
+import { AbstractPetStateGameRoom } from "./state-pet.room"
 import { Client } from "colyseus"
+import { GamePetEvent, GameFoodEvent, GameInventoryEvent } from "@modules/gameplay"
+import {
+    BuyPetPayload,
+    PurchaseFoodPayload,
+    GetCatalogPayload,
+    GetFoodInventoryPayload,
+    FeedPetWithFoodPayload,
+    PurchaseInventoryItemPayload,
+    GetInventoryPayload,
+} from "@modules/gameplay"
+import type { GameRoom } from "../game"
 
 export interface RegisterHandler {
     messageType: GameActionReceiveMessage
     handler: (client: Client, data: unknown) => void
 }
-export abstract class AbstractReceiverGameRoom extends AbstractStateManagementGameRoom {
+export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom {
     protected readonly registers: Array<RegisterHandler> = [
-        // Pet handlers
+        // Pet handlers - convert to GamePetEvent
         {
             messageType: GameActionReceiveMessage.BuyPet,
             handler: (client: Client, data: ReceiveBuyPetPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.BuyPet, {
+                const payload: BuyPetPayload = {
+                    room: this as unknown as GameRoom,
                     client,
-                    data,
-                })
+                    sessionId: client.sessionId,
+                    petType: data.petType,
+                    petTypeId: data.petTypeId,
+                    isBuyPet: data.isBuyPet,
+                }
+                this.eventEmitter.emit(GamePetEvent.BuyRequested, payload)
             },
         },
-        {
-            messageType: GameActionReceiveMessage.GetCatalog,
-            handler: (client: Client, data: ReceiveGetCatalogPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.GetCatalog, {
-                    client,
-                    data,
-                })
-            },
-        },
-        {
-            messageType: GameActionReceiveMessage.GetInventory,
-            handler: (client: Client, data: ReceiveGetInventoryPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.GetInventory, {
-                    client,
-                    data,
-                })
-            },
-        },
-        // Food handlers
+        // Note: Other pet actions (RemovePet, PlayPet, CleanPet, etc.) are handled via FeedPet message
+        // or will be added to GameActionReceiveMessage enum when needed
+        // Food handlers - convert to GameFoodEvent
         {
             messageType: GameActionReceiveMessage.BuyFood,
             handler: (client: Client, data: ReceiveBuyFoodPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.BuyFood, {
+                if (!data.itemId || !data.itemType || !data.itemName || !data.quantity) {
+                    this.logger.debug("purchaseItem invoked without required data", data)
+                    return
+                }
+                const payload: PurchaseFoodPayload = {
+                    room: this as unknown as GameRoom,
                     client,
-                    data,
-                })
+                    sessionId: client.sessionId,
+                    itemId: data.itemId,
+                    itemType: data.itemType,
+                    itemName: data.itemName,
+                    quantity: data.quantity,
+                }
+                this.eventEmitter.emit(GameFoodEvent.PurchaseRequested, payload)
             },
         },
         {
             messageType: GameActionReceiveMessage.GetStoreCatalog,
-            handler: (client: Client, data: ReceiveGetStoreCatalogPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.GetStoreCatalog, {
+            handler: (client: Client) => {
+                const payload: GetCatalogPayload = {
+                    room: this as unknown as GameRoom,
                     client,
-                    data,
-                })
+                    sessionId: client.sessionId,
+                }
+                this.eventEmitter.emit(GameFoodEvent.GetCatalogRequested, payload)
             },
         },
         {
             messageType: GameActionReceiveMessage.GetFoodInventory,
-            handler: (client: Client, data: ReceiveGetFoodInventoryPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.GetFoodInventory, {
+            handler: (client: Client) => {
+                const payload: GetFoodInventoryPayload = {
+                    room: this as unknown as GameRoom,
                     client,
-                    data,
-                })
+                    sessionId: client.sessionId,
+                }
+                this.eventEmitter.emit(GameFoodEvent.GetInventoryRequested, payload)
             },
         },
         {
             messageType: GameActionReceiveMessage.FeedPet,
             handler: (client: Client, data: ReceiveFeedPetPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.FeedPet, {
+                if (!data.petId || !data.foodType || !data.quantity) {
+                    this.logger.warn("feedPet invoked without required data", data)
+                    return
+                }
+                const payload: FeedPetWithFoodPayload = {
+                    room: this as unknown as GameRoom,
                     client,
-                    data,
-                })
+                    sessionId: client.sessionId,
+                    petId: data.petId,
+                    foodType: data.foodType,
+                    quantity: data.quantity,
+                }
+                this.eventEmitter.emit(GameFoodEvent.FeedPetRequested, payload)
             },
         },
-        // Inventory handlers
+        // Inventory handlers - convert to GameInventoryEvent
         {
             messageType: GameActionReceiveMessage.PurchaseItem,
             handler: (client: Client, data: ReceivePurchaseItemPayload) => {
-                this.eventEmitter.emit(GameActionRequestMessage.PurchaseItem, {
+                if (!data.itemId || !data.itemType || !data.quantity) {
+                    this.logger.warn("purchaseItem invoked without required data", data)
+                    return
+                }
+                const payload: PurchaseInventoryItemPayload = {
+                    room: this as unknown as GameRoom,
                     client,
-                    data,
-                })
+                    sessionId: client.sessionId,
+                    itemId: data.itemId,
+                    itemType: data.itemType,
+                    quantity: data.quantity,
+                }
+                this.eventEmitter.emit(GameInventoryEvent.PurchaseItemRequested, payload)
+            },
+        },
+        {
+            messageType: GameActionReceiveMessage.GetInventory,
+            handler: (client: Client) => {
+                const payload: GetInventoryPayload = {
+                    room: this as unknown as GameRoom,
+                    client,
+                    sessionId: client.sessionId,
+                }
+                this.eventEmitter.emit(GameInventoryEvent.GetInventoryRequested, payload)
             },
         },
         // Player handlers

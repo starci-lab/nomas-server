@@ -16,6 +16,12 @@ import {
     SendDailyRewardResponsePayload,
     SendSettingsResponsePayload,
     SendTutorialResponsePayload,
+    SendBuyPetResponsePayload,
+    SendRemovePetResponsePayload,
+    SendCleanedPetResponsePayload,
+    SendCreatePoopResponsePayload,
+    SendActionResponsePayload,
+    SendPetsStateSyncPayload,
 } from "../../events"
 import { AbstractReceiverGameRoom } from "./receiver.room"
 import { PlayerColyseusSchema } from "../../schemas"
@@ -86,5 +92,30 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
 
     protected sendTutorialResponse(client: Client, payload: SendTutorialResponsePayload) {
         client.send(GameActionSendMessage.TutorialResponse, payload)
+    }
+
+    // Pet send methods
+    protected sendBuyPetResponse(client: Client, payload: SendBuyPetResponsePayload) {
+        client.send(GameActionSendMessage.BuyPetResponse, payload)
+    }
+
+    protected sendRemovePetResponse(client: Client, payload: SendRemovePetResponsePayload) {
+        client.send(GameActionSendMessage.RemovePetResponse, payload)
+    }
+
+    protected sendCleanedPetResponse(client: Client, payload: SendCleanedPetResponsePayload) {
+        client.send(GameActionSendMessage.CleanedPetResponse, payload)
+    }
+
+    protected sendCreatePoopResponse(client: Client, payload: SendCreatePoopResponsePayload) {
+        client.send(GameActionSendMessage.CreatePoopResponse, payload)
+    }
+
+    protected sendActionResponse(client: Client, payload: SendActionResponsePayload) {
+        client.send(GameActionSendMessage.ActionResponse, payload)
+    }
+
+    protected sendPetsStateSync(client: Client, payload: SendPetsStateSyncPayload) {
+        client.send(GameActionSendMessage.PetsStateSync, payload)
     }
 }

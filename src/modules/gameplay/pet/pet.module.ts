@@ -1,14 +1,11 @@
-import { DynamicModule, Module, Provider } from "@nestjs/common"
+import { Module } from "@nestjs/common"
 import { PetGameService } from "./pet.service"
+import { ConfigurableModuleClass } from "./pet.module-definition"
+import { GameMemdbModule } from "@modules/databases"
 
-@Module({})
-export class GameplayPetModule {
-    static register(): DynamicModule {
-        const providers: Provider[] = [PetGameService]
-        return {
-            module: GameplayPetModule,
-            providers,
-            exports: providers,
-        }
-    }
-}
+@Module({
+    imports: [GameMemdbModule],
+    providers: [PetGameService],
+    exports: [PetGameService],
+})
+export class GameplayPetModule extends ConfigurableModuleClass {}

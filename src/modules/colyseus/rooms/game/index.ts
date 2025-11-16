@@ -16,14 +16,13 @@ export class GameRoom extends AbstractSenderGameRoom {
         this.initializeRoom(options)
         // start simulation loop
         this.initializeSimulationLoop()
+        // register receiver handlers
+        this.registerReceiverHandlers()
         // bootstrap room with retry
         await this.bootstrapRoomWithRetry()
     }
 
-    async onJoin(
-        client: Client, 
-        options: GameRoomOptions
-    ) {
+    async onJoin(client: Client, options: GameRoomOptions) {
         const player = new PlayerColyseusSchema()
         player.sessionId = client.sessionId
         player.walletAddress = options?.userAddress
@@ -53,16 +52,16 @@ export class GameRoom extends AbstractSenderGameRoom {
     onDispose() {
         this.logger.debug("Disposing GameRoom", this.roomId)
     }
-    
+
     // attach nestjs dependencies
     private initializeDependencies() {
         this.retryService = this.app.get(RetryService, { strict: false })
+        // Message conversion is now done inline in receiver.room.ts
+        // No need to inject message handlers anymore
     }
 
     // initialize room state
-    private initializeRoom(
-        options: GameRoomOptions
-    ) {
+    private initializeRoom(options: GameRoomOptions) {
         this.state = new GameRoomColyseusSchema()
         this.state.roomName = `pet_simulator_room_${options?.userAddress}`
         this.logger.debug(`GameRoom created (${this.roomId})`)

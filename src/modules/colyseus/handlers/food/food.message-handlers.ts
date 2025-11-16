@@ -17,7 +17,7 @@ export class FoodMessageHandlers {
     purchaseItem(room: GameRoom) {
         return (client: Client, data: PurchaseFoodMessage = {}): PurchaseFoodPayload | null => {
             if (!data.itemId || !data.itemType || !data.itemName || !data.quantity) {
-                this.logger.warn("purchaseItem invoked without required data", data)
+                this.logger.debug("purchaseItem invoked without required data", data)
                 return null
             }
             return {

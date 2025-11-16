@@ -1,17 +1,13 @@
 import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import { InjectConnection } from "@nestjs/mongoose"
 import { Connection, Model, ClientSession } from "mongoose"
-import { Client } from "colyseus"
 import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSchema } from "@modules/colyseus/schemas"
 import { PurchaseInventoryItemPayload, GetInventoryPayload } from "./inventory.events"
 import { PlayerGameService } from "../player/player.service"
 import { StoreItemSchema } from "@modules/databases/mongodb/game/schemas/store-item.schema"
-
-type ActionResponsePayload = {
-    success: boolean
-    message: string
-    data?: Record<string, unknown>
-}
+import { PurchaseInventoryItemResult, GetInventoryResult } from "./inventory.results"
+import { GAME_MONGOOSE_CONNECTION_NAME } from "@modules/databases/mongodb/game/constants"
+import { MemdbStorageService } from "@modules/databases"
 
 interface InventorySummary {
     totalItems: number
@@ -31,7 +27,8 @@ export class InventoryGameService {
 
     constructor(
         @Inject(forwardRef(() => PlayerGameService)) private playerService: PlayerGameService,
-        @InjectConnection() private connection: Connection,
+        @InjectConnection(GAME_MONGOOSE_CONNECTION_NAME) private connection: Connection,
+        private readonly memdbStorageService: MemdbStorageService,
     ) {}
 
     // Lazy load model - chỉ tạo khi cần dùng
@@ -56,115 +53,153 @@ export class InventoryGameService {
         }
     }
 
-    async handlePurchaseItem({ room, client, sessionId, itemId, itemType, quantity }: PurchaseInventoryItemPayload) {
+    async handlePurchaseItem({
+        room,
+        sessionId,
+        itemId,
+        itemType,
+        quantity,
+    }: PurchaseInventoryItemPayload): Promise<PurchaseInventoryItemResult> {
         try {
             this.logger.debug(`🛒 [InventoryGameService] Handling purchase item request: ${itemId} x${quantity}`)
 
             if (!itemId) {
-                this.sendActionResponse(client, "purchase_response", {
+                return {
                     success: false,
                     message: "Item ID is required",
-                })
-                return
+                    error: "Item ID is required",
+                }
             }
 
             const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
             if (!player) {
-                this.sendActionResponse(client, "purchase_response", {
+                return {
                     success: false,
                     message: "Player not found in room",
-                })
-                return
+                    error: "Player not found in room",
+                }
             }
 
-            // Use transaction for purchase operation
-            const result = await this.withTransaction(async (session) => {
-                const storeItem = await this.getStoreItem(itemId)
+            // Get store item from memdb (memory cache) instead of querying DB
+            const storeItem = this.getStoreItemFromMemdb(itemId)
 
-                if (!storeItem) {
-                    throw new Error(`Store item ${itemId} not found`)
-                }
-
-                const price = storeItem.costNom * quantity
-
-                // Check if player has enough tokens
-                const hasEnoughTokens = await this.playerService.hasEnoughTokens(player, price)
-                if (!hasEnoughTokens) {
-                    throw new Error("Not enough tokens")
-                }
-
-                // Deduct tokens from player (with session)
-                const tokenDeducted = await this.playerService.deductTokensWithSession(player, price, session)
-                if (!tokenDeducted) {
-                    throw new Error("Failed to deduct tokens")
-                }
-
-                // Add item to player inventory
-                this.addItem(player, itemType, itemId, storeItem.name, quantity)
-
+            if (!storeItem) {
                 return {
-                    success: true,
-                    message: `Purchased ${quantity}x ${itemId}`,
-                    newTokenBalance: player.tokens,
+                    success: false,
+                    message: `Store item ${itemId} not found`,
+                    error: `Store item ${itemId} not found`,
+                    player,
                 }
+            }
+
+            const price = storeItem.costNom * quantity
+
+            // Check if player has enough tokens
+            if (player.tokens < price) {
+                return {
+                    success: false,
+                    message: `Not enough tokens. Need ${price}, have ${player.tokens}`,
+                    error: `Not enough tokens. Need ${price}, have ${player.tokens}`,
+                    player,
+                }
+            }
+
+            // Deduct tokens from player in state
+            player.tokens -= price
+
+            // Sync tokens to DB immediately (tokens must be synced immediately for data integrity)
+            await this.playerService.syncTokensToDB(player).catch((error) => {
+                this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
+                // Continue even if sync fails - state is already updated
             })
 
-            // Send response to client
-            this.sendActionResponse(client, "purchase_response", {
+            const transactionResult = {
                 success: true,
-                message: result.message,
+                message: `Purchased ${quantity}x ${itemId}`,
+                newTokenBalance: player.tokens,
+            }
+
+            // Add item to player inventory (only in state, will be synced to DB later by background job)
+            this.addItem(player, itemType, itemId, storeItem.name, quantity)
+
+            return {
+                success: true,
+                message: transactionResult.message,
                 data: {
                     itemId,
                     itemType,
                     quantity,
-                    newTokenBalance: result.newTokenBalance,
+                    newTokenBalance: transactionResult.newTokenBalance,
                 },
-            })
+                player,
+            }
         } catch (error) {
             this.logger.error(
                 `❌ [InventoryGameService] Error purchasing item: ${error instanceof Error ? error.message : "Unknown error"}`,
             )
-            this.sendActionResponse(client, "purchase_response", {
+            return {
                 success: false,
                 message: error instanceof Error ? error.message : "Purchase failed",
-            })
+                error: error instanceof Error ? error.message : "Purchase failed",
+            }
         }
     }
 
-    async handleGetInventory({ room, client, sessionId }: GetInventoryPayload) {
+    async handleGetInventory({ room, sessionId }: GetInventoryPayload): Promise<GetInventoryResult> {
         try {
-            this.logger.debug(`📦 [InventoryGameService] Handling get inventory request`)
+            this.logger.debug("📦 [InventoryGameService] Handling get inventory request")
 
             const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
             if (!player) {
-                this.sendActionResponse(client, "inventory_response", {
+                return {
                     success: false,
                     message: "Player not found in room",
-                })
-                return
+                    error: "Player not found in room",
+                }
             }
 
             const inventorySummary = this.getInventorySummary(player)
 
-            client.send("inventory_response", {
+            return {
                 success: true,
-                data: { inventory: inventorySummary },
                 message: "Inventory retrieved successfully",
+                data: { inventory: inventorySummary as unknown as Record<string, unknown> },
                 tokens: player.tokens,
-                timestamp: Date.now(),
-            })
+                player,
+            }
         } catch (error) {
             this.logger.error(
                 `❌ [InventoryGameService] Error getting inventory: ${error instanceof Error ? error.message : "Unknown error"}`,
             )
-            client.send("inventory_response", {
+            return {
                 success: false,
+                message: "Failed to get inventory",
                 error: "Failed to get inventory",
-                timestamp: Date.now(),
-            })
+            }
         }
     }
 
+    /**
+     * Get store item from memdb (memory cache) instead of querying DB
+     * This is much faster and reduces DB load
+     */
+    private getStoreItemFromMemdb(itemId: string): StoreItemSchema | null {
+        try {
+            const storeItems = this.memdbStorageService.getStoreItems()
+            const storeItem = storeItems.find((item) => item._id?.toString() === itemId || item._id === itemId)
+            return storeItem || null
+        } catch (error) {
+            this.logger.error(
+                `Error getting store item from memdb: ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
+            return null
+        }
+    }
+
+    /**
+     * @deprecated Use getStoreItemFromMemdb instead. This method queries DB directly.
+     * Only use this if memdb doesn't have the item (shouldn't happen in normal flow)
+     */
     async getStoreItem(itemId: string): Promise<StoreItemSchema | null> {
         try {
             const storeItem = await this.storeItemModel.findOne({ _id: itemId }).exec()
@@ -270,14 +305,5 @@ export class InventoryGameService {
 
     private getPlayer(state: GameRoomColyseusSchema, sessionId: string): PlayerColyseusSchema | undefined {
         return state.players.get(sessionId)
-    }
-
-    private sendActionResponse(client: Client, messageType: string, payload: ActionResponsePayload) {
-        client.send(messageType, {
-            success: payload.success,
-            message: payload.message,
-            data: payload.data ?? {},
-            timestamp: Date.now(),
-        })
     }
 }
