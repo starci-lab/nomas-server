@@ -6,6 +6,9 @@ import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin
 import { GraphQLJSON } from "graphql-type-json"
 import { GameQueriesModule } from "./queries"
 import { GameMutationsModule } from "./mutations"
+import { GraphQLExceptionFilter } from "@modules/graphql/exception-filter/graphql-exception.filter"
+import { APP_FILTER } from "@nestjs/core"
+// import { formatGraphQLError } from "./common"
 
 @Module({})
 export class GraphQLModule extends ConfigurableModuleClass {
@@ -27,7 +30,7 @@ export class GraphQLModule extends ConfigurableModuleClass {
         if (useFederation) {
             throw new Error("Federation is not supported yet")
         } else {
-            imports.push( 
+            imports.push(
                 NestGraphQLModule.forRoot<ApolloDriverConfig>({
                     driver: ApolloDriver,
                     playground: false,
@@ -35,7 +38,12 @@ export class GraphQLModule extends ConfigurableModuleClass {
                     plugins: [ApolloServerPluginLandingPageLocalDefault()],
                     resolvers: plugins.json ? { JSON: GraphQLJSON } : undefined,
                     context: ({ req, res }) => ({ req, res }),
-                }),)
+                    // Format and capture GraphQL errors to Sentry
+                    formatError: (err) => {
+                        return err
+                    },
+                }),
+            )
         }
         // register all resolvers
         if (resolvers.game) {
@@ -45,7 +53,13 @@ export class GraphQLModule extends ConfigurableModuleClass {
         return {
             ...dynamicModule,
             imports,
-            providers: [...dynamicModule.providers || []],
+            providers: [
+                ...(dynamicModule.providers || []),
+                {
+                    provide: APP_FILTER,
+                    useClass: GraphQLExceptionFilter,
+                },
+            ],
         }
     }
 }

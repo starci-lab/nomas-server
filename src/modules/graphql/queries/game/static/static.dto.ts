@@ -12,7 +12,7 @@ export class PetsResponse extends AbstractGraphQLResponse implements IAbstractGr
     @Field(() => [PetSchema], {
         description: "List of pets returned by the query.",
     })
-    data: Array<PetSchema>
+        data: Array<PetSchema>
 }
 
 /**
@@ -28,5 +28,5 @@ export class StoreItemsResponse
     @Field(() => [StoreItemSchema], {
         description: "List of liquidity pools returned by the query.",
     })
-    data: Array<StoreItemSchema>
+        data: Array<StoreItemSchema>
 }
