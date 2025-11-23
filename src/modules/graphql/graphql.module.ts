@@ -6,6 +6,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin
 import { GraphQLJSON } from "graphql-type-json"
 import { GameQueriesModule } from "./queries"
 import { GameMutationsModule } from "./mutations"
+import { SentryApolloPlugin } from "./sentry.plugin"
 
 @Module({})
 export class GraphQLModule extends ConfigurableModuleClass {
@@ -27,15 +28,16 @@ export class GraphQLModule extends ConfigurableModuleClass {
         if (useFederation) {
             throw new Error("Federation is not supported yet")
         } else {
-            imports.push( 
+            imports.push(
                 NestGraphQLModule.forRoot<ApolloDriverConfig>({
                     driver: ApolloDriver,
                     playground: false,
                     autoSchemaFile: true,
-                    plugins: [ApolloServerPluginLandingPageLocalDefault()],
+                    plugins: [ApolloServerPluginLandingPageLocalDefault(), SentryApolloPlugin],
                     resolvers: plugins.json ? { JSON: GraphQLJSON } : undefined,
                     context: ({ req, res }) => ({ req, res }),
-                }),)
+                }),
+            )
         }
         // register all resolvers
         if (resolvers.game) {
@@ -45,7 +47,7 @@ export class GraphQLModule extends ConfigurableModuleClass {
         return {
             ...dynamicModule,
             imports,
-            providers: [...dynamicModule.providers || []],
+            providers: [...(dynamicModule.providers || [])],
         }
     }
 }

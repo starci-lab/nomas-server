@@ -1,6 +1,8 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from "@nestjs/common"
 import { SentryExceptionCaptured } from "@sentry/nestjs"
+import * as Sentry from "@sentry/nestjs"
 import { Response } from "express"
+import { GqlExceptionFilter } from "@nestjs/graphql"
 import {
     AccountAddressRequiredException,
     MessageInvalidException,
@@ -14,6 +16,7 @@ import {
     SignatureInvalidException,
     SignatureRequiredException,
 } from "src/exceptions"
+import { GraphQLError } from "graphql"
 
 interface ErrorResponse {
     statusCode: number
@@ -22,15 +25,91 @@ interface ErrorResponse {
 }
 
 @Catch()
-export class SentryCatchAllExceptionFilter implements ExceptionFilter {
+export class SentryCatchAllExceptionFilter implements ExceptionFilter, GqlExceptionFilter {
     // sentry will capture the exception
     @SentryExceptionCaptured()
     catch(exception: unknown, host: ArgumentsHost): void {
+        const contextType = host.getType() as string
+
+        // Handle GraphQL context
+        if (contextType === "graphql") {
+            this.handleGraphQLContext(exception)
+            return
+        }
+
+        // Handle WebSocket context (Colyseus)
+        if (contextType === "ws") {
+            this.handleWebSocketContext(exception, host)
+            return
+        }
+
+        // Handle HTTP context (default)
+        this.handleHttpContext(exception, host)
+    }
+
+    private handleHttpContext(exception: unknown, host: ArgumentsHost): void {
         const ctx = host.switchToHttp()
         const response = ctx.getResponse<Response>()
 
-        let errorResponse: ErrorResponse
+        const errorResponse = this.buildErrorResponse(exception)
 
+        response.status(errorResponse.statusCode).json({
+            statusCode: errorResponse.statusCode,
+            message: errorResponse.message,
+            code: errorResponse.code,
+            timestamp: new Date().toISOString(),
+        })
+    }
+
+    private handleWebSocketContext(exception: unknown, host: ArgumentsHost): void {
+        const ctx = host.switchToWs()
+        const client = ctx.getClient()
+
+        const errorResponse = this.buildErrorResponse(exception)
+
+        // Send error back to WebSocket client if possible
+        if (client && typeof client.send === "function") {
+            try {
+                client.send(
+                    JSON.stringify({
+                        error: {
+                            statusCode: errorResponse.statusCode,
+                            message: errorResponse.message,
+                            code: errorResponse.code,
+                            timestamp: new Date().toISOString(),
+                        },
+                    }),
+                )
+            } catch (sendError) {
+                // If sending fails, log it but don't throw
+                console.error("Failed to send error to WebSocket client:", sendError)
+            }
+        }
+    }
+
+    private handleGraphQLContext(exception: unknown): void {
+        // Capture exception to Sentry before transforming to GraphQLError
+        if (exception instanceof Error) {
+            Sentry.captureException(exception)
+        } else {
+            Sentry.captureException(new Error(String(exception)))
+        }
+
+        const errorResponse = this.buildErrorResponse(exception)
+
+        // For GraphQL, we need to throw a GraphQLError
+        // Apollo will handle the formatting
+        throw new GraphQLError(errorResponse.message, {
+            extensions: {
+                code: errorResponse.code,
+                statusCode: errorResponse.statusCode,
+                timestamp: new Date().toISOString(),
+            },
+        })
+    }
+
+    // === Error Response ===
+    private buildErrorResponse(exception: unknown): ErrorResponse {
         // Handle auth exceptions
         if (
             exception instanceof SignatureException ||
@@ -42,40 +121,33 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter {
             exception instanceof SignatureInvalidException ||
             exception instanceof MessageInvalidException
         ) {
-            errorResponse = this.handleAuthException(exception)
+            return this.handleAuthException(exception)
         }
         // Handle blockchain exceptions
         else if (exception instanceof PlatformNotFoundException) {
-            errorResponse = this.handleBlockchainException(exception)
+            return this.handleBlockchainException(exception)
         }
 
         // Handle database exceptions
         else if (exception instanceof SeederException) {
-            errorResponse = this.handleDatabaseException(exception)
+            return this.handleDatabaseException(exception)
         }
 
         // Handle graphql exceptions
         else if (exception instanceof QueryGameUserNotFoundException) {
-            errorResponse = this.handleGraphqlException(exception)
+            return this.handleGraphqlException(exception)
         }
 
         // Handle generic errors
         else if (exception instanceof Error) {
-            errorResponse = this.handleGenericError(exception)
+            return this.handleGenericError(exception)
         } else {
-            errorResponse = {
+            return {
                 statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
                 message: "Internal server error",
                 code: "INTERNAL_SERVER_ERROR",
             }
         }
-
-        response.status(errorResponse.statusCode).json({
-            statusCode: errorResponse.statusCode,
-            message: errorResponse.message,
-            code: errorResponse.code,
-            timestamp: new Date().toISOString(),
-        })
     }
 
     private handleAuthException(
