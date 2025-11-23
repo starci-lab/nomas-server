@@ -1,6 +1,7 @@
 // import { envConfig } from "@modules/env"
 import Sentry from "@sentry/nestjs"
 import "dotenv/config"
+
 // init sentry
 Sentry.init({
     dsn: "https://acf3559f5c5cbbb5195ed6d4216739cd@o4510412601950208.ingest.us.sentry.io/4510412605882368",
@@ -15,4 +16,12 @@ Sentry.init({
     // Setting this option to true will send default PII data to Sentry.
     // For example, automatic IP address collection on events
     sendDefaultPii: true,
+
+    integrations: [
+        Sentry.graphqlIntegration({
+            ignoreResolveSpans: false,
+            ignoreTrivialResolveSpans: true,
+            useOperationNameForRootSpan: true,
+        }),
+    ],
 })

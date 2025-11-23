@@ -1,8 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from "@nestjs/common"
 import { SentryExceptionCaptured } from "@sentry/nestjs"
-import * as Sentry from "@sentry/nestjs"
 import { Response } from "express"
-import { GqlExceptionFilter } from "@nestjs/graphql"
 import {
     AccountAddressRequiredException,
     MessageInvalidException,
@@ -16,7 +14,6 @@ import {
     SignatureInvalidException,
     SignatureRequiredException,
 } from "src/exceptions"
-import { GraphQLError } from "graphql"
 
 interface ErrorResponse {
     statusCode: number
@@ -25,15 +22,21 @@ interface ErrorResponse {
 }
 
 @Catch()
-export class SentryCatchAllExceptionFilter implements ExceptionFilter, GqlExceptionFilter {
+export class SentryCatchAllExceptionFilter implements ExceptionFilter {
     // sentry will capture the exception
     @SentryExceptionCaptured()
     catch(exception: unknown, host: ArgumentsHost): void {
         const contextType = host.getType() as string
 
-        // Handle GraphQL context
+        // Note: GraphQL errors are handled by formatError in GraphQLModule
+        // Exception filter is not called for GraphQL errors as Apollo Server handles them first
+        // Skip GraphQL context to avoid duplicate capture
         if (contextType === "graphql") {
-            this.handleGraphQLContext(exception)
+            // GraphQL errors are already captured in formatError
+            // Just re-throw to let Apollo handle it
+            if (exception instanceof Error) {
+                throw exception
+            }
             return
         }
 
@@ -85,27 +88,6 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter, GqlExcept
                 console.error("Failed to send error to WebSocket client:", sendError)
             }
         }
-    }
-
-    private handleGraphQLContext(exception: unknown): void {
-        // Capture exception to Sentry before transforming to GraphQLError
-        if (exception instanceof Error) {
-            Sentry.captureException(exception)
-        } else {
-            Sentry.captureException(new Error(String(exception)))
-        }
-
-        const errorResponse = this.buildErrorResponse(exception)
-
-        // For GraphQL, we need to throw a GraphQLError
-        // Apollo will handle the formatting
-        throw new GraphQLError(errorResponse.message, {
-            extensions: {
-                code: errorResponse.code,
-                statusCode: errorResponse.statusCode,
-                timestamp: new Date().toISOString(),
-            },
-        })
     }
 
     // === Error Response ===

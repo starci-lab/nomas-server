@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor, SetMetadata } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 import { Observable } from "rxjs"
-import { map, catchError } from "rxjs/operators"
+import { map } from "rxjs/operators"
 import { RequestLifecycleService } from "@modules/mixin"
 
 interface GraphQLResponse<T = unknown> {
@@ -16,17 +16,13 @@ export const SUCCESS_MESSAGE_METADATA = "successMessage"
 export const GraphQLSuccessMessage = (message: string) => SetMetadata(SUCCESS_MESSAGE_METADATA, message)
 
 @Injectable()
-export class GraphQLTransformInterceptor<T = unknown>
-implements NestInterceptor<T, GraphQLResponse<T>> {
+export class GraphQLTransformInterceptor<T = unknown> implements NestInterceptor<T, GraphQLResponse<T>> {
     constructor(
         private readonly reflector: Reflector,
         private readonly requestLifecycleService: RequestLifecycleService,
-    ) { }
+    ) {}
 
-    intercept(
-        context: ExecutionContext, 
-        next: CallHandler<T>
-    ): Observable<GraphQLResponse<T>> {
+    intercept(context: ExecutionContext, next: CallHandler<T>): Observable<GraphQLResponse<T>> {
         const message =
             this.reflector.get<string>(SUCCESS_MESSAGE_METADATA, context.getHandler()) ??
             this.reflector.get<string>(SUCCESS_MESSAGE_METADATA, context.getClass())
@@ -37,16 +33,6 @@ implements NestInterceptor<T, GraphQLResponse<T>> {
                     message,
                     success: true,
                 }
-            }),
-            catchError((err) => {
-                return new Observable<GraphQLResponse<T>>((observer) => {
-                    observer.next({
-                        success: false,
-                        message: err.message,
-                        error: err.name,
-                    })
-                    observer.complete()
-                })
             }),
         )
     }
