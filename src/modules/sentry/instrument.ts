@@ -6,5 +6,11 @@ dotenv.config()
 Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
-    tracesSampleRate: 1.0,
+    // Send structured logs to Sentry
+    enableLogs: true,
+    // Tracing
+    tracesSampleRate: 1.0, //  Capture 100% of the transaction
+    // Setting this option to true will send default PII data to Sentry.
+    // For example, automatic IP address collection on events
+    sendDefaultPii: true,
 })

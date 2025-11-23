@@ -8,6 +8,8 @@ import { BlockchainModule } from "@modules/blockchain"
 import { ColyseusModule } from "@modules/colyseus"
 import { EventModule } from "@modules/event"
 import { GameplayModule } from "@modules/gameplay"
+import { SentryCatchAllExceptionFilter, SentryModule } from "@modules/sentry"
+import { APP_FILTER } from "@nestjs/core"
 
 @Module({
     imports: [
@@ -40,7 +42,15 @@ import { GameplayModule } from "@modules/gameplay"
             isGlobal: true,
         }),
         ColyseusModule.forRoot(),
+        SentryModule.register({
+            isGlobal: true,
+        }),
     ],
-    providers: [],
+    providers: [
+        {
+            provide: APP_FILTER,
+            useClass: SentryCatchAllExceptionFilter,
+        },
+    ],
 })
 export class AppModule {}
