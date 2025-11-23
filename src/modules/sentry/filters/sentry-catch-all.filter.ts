@@ -13,7 +13,7 @@ import {
     SignatureException,
     SignatureInvalidException,
     SignatureRequiredException,
-} from "../../../exceptions"
+} from "src/exceptions"
 
 interface ErrorResponse {
     statusCode: number
@@ -26,8 +26,6 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter {
     // sentry will capture the exception
     @SentryExceptionCaptured()
     catch(exception: unknown, host: ArgumentsHost): void {
-        console.log("🔥 Exception caught in filter:", exception)
-
         const ctx = host.switchToHttp()
         const response = ctx.getResponse<Response>()
 
@@ -71,8 +69,6 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter {
                 code: "INTERNAL_SERVER_ERROR",
             }
         }
-
-        console.log("📤 Sending error response:", errorResponse)
 
         response.status(errorResponse.statusCode).json({
             statusCode: errorResponse.statusCode,

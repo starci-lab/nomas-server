@@ -75,7 +75,7 @@ export const envConfig = () => ({
         host: process.env.LOKI_HOST || "http://localhost:3100",
     },
     sentry: {
-        dsn: process.env.SENTRY_DSN ?? "",
+        dsn: process.env.SENTRY_DSN,
         environment: process.env.NODE_ENV ?? "development",
         tracesSampleRate: Number.parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE ?? "1.0"),
     },
