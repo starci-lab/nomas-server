@@ -4,7 +4,7 @@ import dotenv from "dotenv"
 dotenv.config()
 // init sentry
 Sentry.init({
-    dsn: process.env.SENTRY_DSN,
+    dsn: "https://acf3559f5c5cbbb5195ed6d4216739cd@o4510412601950208.ingest.us.sentry.io/4510412605882368",
     environment: process.env.NODE_ENV,
     // Send structured logs to Sentry
     enableLogs: true,

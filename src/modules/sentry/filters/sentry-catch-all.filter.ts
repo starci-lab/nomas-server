@@ -26,14 +26,12 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter {
     // sentry will capture the exception
     @SentryExceptionCaptured()
     catch(exception: unknown, host: ArgumentsHost): void {
+        console.log("🔥 Exception caught in filter:", exception)
+
         const ctx = host.switchToHttp()
         const response = ctx.getResponse<Response>()
 
-        let errorResponse: ErrorResponse = {
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: "Internal server error",
-            code: "INTERNAL_SERVER_ERROR",
-        }
+        let errorResponse: ErrorResponse
 
         // Handle auth exceptions
         if (
@@ -52,18 +50,29 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter {
         else if (exception instanceof PlatformNotFoundException) {
             errorResponse = this.handleBlockchainException(exception)
         }
+
         // Handle database exceptions
         else if (exception instanceof SeederException) {
             errorResponse = this.handleDatabaseException(exception)
         }
+
         // Handle graphql exceptions
         else if (exception instanceof QueryGameUserNotFoundException) {
             errorResponse = this.handleGraphqlException(exception)
         }
+
         // Handle generic errors
         else if (exception instanceof Error) {
             errorResponse = this.handleGenericError(exception)
+        } else {
+            errorResponse = {
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+                message: "Internal server error",
+                code: "INTERNAL_SERVER_ERROR",
+            }
         }
+
+        console.log("📤 Sending error response:", errorResponse)
 
         response.status(errorResponse.statusCode).json({
             statusCode: errorResponse.statusCode,

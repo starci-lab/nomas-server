@@ -10,6 +10,9 @@ import { EventModule } from "@modules/event"
 import { GameplayModule } from "@modules/gameplay"
 import { SentryCatchAllExceptionFilter, SentryModule } from "@modules/sentry"
 import { APP_FILTER } from "@nestjs/core"
+import { GraphQLModule } from "@modules/graphql"
+import { AppService } from "@apps/nomas-server/src/app.service"
+import { TestController } from "./test.controller"
 
 @Module({
     imports: [
@@ -42,11 +45,22 @@ import { APP_FILTER } from "@nestjs/core"
             isGlobal: true,
         }),
         ColyseusModule.forRoot(),
+        GraphQLModule.register({
+            resolvers: {
+                game: true,
+            },
+            plugins: {
+                json: false,
+            },
+            isGlobal: true,
+        }),
         SentryModule.register({
             isGlobal: true,
         }),
     ],
+    controllers: [TestController],
     providers: [
+        AppService,
         {
             provide: APP_FILTER,
             useClass: SentryCatchAllExceptionFilter,
