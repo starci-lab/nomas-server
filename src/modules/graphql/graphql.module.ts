@@ -7,7 +7,8 @@ import { GraphQLJSON } from "graphql-type-json"
 import { GameQueriesModule } from "./queries"
 import { GameMutationsModule } from "./mutations"
 import { GraphQLExceptionFilter } from "@modules/graphql/exception-filter/graphql-exception.filter"
-import { APP_FILTER } from "@nestjs/core"
+import { GraphQLLoggerInterceptor } from "./interceptors"
+import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core"
 // import { formatGraphQLError } from "./common"
 
 @Module({})
@@ -58,6 +59,10 @@ export class GraphQLModule extends ConfigurableModuleClass {
                 {
                     provide: APP_FILTER,
                     useClass: GraphQLExceptionFilter,
+                },
+                {
+                    provide: APP_INTERCEPTOR,
+                    useClass: GraphQLLoggerInterceptor,
                 },
             ],
         }

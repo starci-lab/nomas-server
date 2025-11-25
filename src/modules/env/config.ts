@@ -73,6 +73,9 @@ export const envConfig = () => ({
     },
     loki: {
         host: process.env.LOKI_HOST || "http://localhost:3100",
+        requireAuth: false,
+        username: process.env.LOKI_USERNAME || "admin",
+        password: process.env.LOKI_PASSWORD || "admin",
     },
     sentry: {
         dsn: process.env.SENTRY_DSN,
