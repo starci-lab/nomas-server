@@ -18,7 +18,7 @@ export class UserSchema extends AbstractSchema {
         nullable: true,
     })
     @Prop({ type: String, enum: Platform, required: true, default: Platform.Evm })
-    platform: Platform
+        platform: Platform
 
     @Field(() => String, {
         description:
@@ -26,7 +26,7 @@ export class UserSchema extends AbstractSchema {
         nullable: true,
     })
     @Prop({ type: String, required: true })
-    accountAddress: string
+        accountAddress: string
 }
 
 export const UserSchemaClass = SchemaFactory.createForClass(UserSchema)

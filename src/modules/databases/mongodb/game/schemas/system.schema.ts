@@ -14,13 +14,13 @@ export class DefaultInfoSchema {
         description: "Default starting token NOMamount",
     })
     @Prop({ type: Number, required: true, default: 10000 })
-    tokenNom: number
+        tokenNom: number
 
     @Field(() => GraphQLTypePetId, {
         description: "Default pet ID given to new users",
     })
     @Prop({ type: String, enum: PetId, required: true, default: PetId.Chog })
-    defaultPetId: PetId
+        defaultPetId: PetId
 }
 
 export const DefaultInfoSchemaClass = SchemaFactory.createForClass(DefaultInfoSchema)

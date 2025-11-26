@@ -9,7 +9,7 @@ export class VerifyMessageRefreshTokenData {
     @Field(() => String, { description: "Refresh token string." })
     @IsString()
     @IsNotEmpty()
-    token: string
+        token: string
 
     @Field(() => Date, {
         nullable: true,
@@ -17,7 +17,7 @@ export class VerifyMessageRefreshTokenData {
     })
     @IsDate()
     @IsOptional()
-    expiredAt: Date | null
+        expiredAt: Date | null
 }
 
 @ObjectType({
@@ -27,12 +27,12 @@ export class VerifyMessageResponseData {
     @Field(() => String, { description: "Access token for authenticated user." })
     @IsJWT()
     @IsNotEmpty()
-    accessToken: string
+        accessToken: string
 
     @Field(() => VerifyMessageRefreshTokenData, {
         description: "Refresh token payload for renewing access tokens.",
     })
-    refreshToken: VerifyMessageRefreshTokenData
+        refreshToken: VerifyMessageRefreshTokenData
 }
 
 @ObjectType()
@@ -41,5 +41,5 @@ export class VerifyMessageResponse
     implements IAbstractGraphQLResponse<VerifyMessageResponseData>
 {
     @Field(() => VerifyMessageResponseData, { description: "Data of the response" })
-    data: VerifyMessageResponseData
+        data: VerifyMessageResponseData
 }

@@ -7,17 +7,17 @@ export class VerifyMessageInput {
     @Field(() => String, { description: "Message to verify signature" })
     @IsString()
     @IsNotEmpty()
-    message: string
+        message: string
 
     @Field(() => String, { description: "Address to verify signature" })
     @IsString()
     @IsNotEmpty()
-    address: string
+        address: string
 
     @Field(() => String, { description: "Signed message from the message" })
     @IsString()
     @IsNotEmpty()
-    signedMessage: string
+        signedMessage: string
 
     @Field(() => GraphQLTypePlatform, {
         nullable: true,
@@ -26,5 +26,5 @@ export class VerifyMessageInput {
     })
     @IsEnum(Platform)
     @IsOptional()
-    platform: Platform = Platform.Evm
+        platform: Platform = Platform.Evm
 }
