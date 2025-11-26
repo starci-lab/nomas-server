@@ -10,7 +10,7 @@ import { envConfig } from "@modules/env"
 import { AuthService as BlockchainAuthService } from "@modules/blockchain"
 import { InjectGameMongoose, MemdbStorageService, OwnedPetSchema, UserSchema } from "@modules/databases"
 import { Connection } from "mongoose"
-import { VerifyMessageInput } from "@modules/graphql/mutations/game/auth/dto"
+import { VerifyMessageInput, VerifyMessageResponseData } from "@modules/graphql/mutations/game/auth/dto"
 import { MutationAuthInvalidSignatureException } from "@exceptions"
 
 @Injectable()
@@ -48,7 +48,7 @@ export class AuthService {
         }
     }
 
-    async verifyMessage(request: VerifyMessageInput) {
+    async verifyMessage(request: VerifyMessageInput): Promise<VerifyMessageResponseData> {
         const mongoSession = await this.connection.startSession()
         try {
             const result = await mongoSession.withTransaction(async () => {
@@ -86,25 +86,29 @@ export class AuthService {
                         ownerId: user._id,
                         petType: defaultInfo.defaultPetId,
                     })
-                    /************************************************************
-                     * GENERATE AUTH TOKENS
-                     ************************************************************/
-                    const {
-                        accessToken,
-                        refreshToken: { token: refreshToken, expiredAt },
-                    } = await this.jwtEphemeralService.generateAuthCredentials({
-                        userId: user.id,
-                        platform: user.platform,
-                        userAddress: user.accountAddress,
-                    })
-                    return {
-                        accessToken,
-                        refreshToken: {
-                            token: refreshToken,
-                            expiredAt,
-                        },
-                    }
                 }
+
+                /************************************************************
+                 * GENERATE AUTH TOKENS
+                 ************************************************************/
+                const {
+                    accessToken,
+                    refreshToken: { token, expiredAt },
+                } = await this.jwtEphemeralService.generateAuthCredentials({
+                    userId: user.id,
+                    platform: user.platform,
+                    userAddress: user.accountAddress,
+                })
+
+                const response: VerifyMessageResponseData = {
+                    accessToken,
+                    refreshToken: {
+                        token,
+                        expiredAt,
+                    },
+                }
+
+                return response
             })
             return result
         } catch (error) {

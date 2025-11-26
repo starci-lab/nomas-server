@@ -1,5 +1,5 @@
 import { InputType, Field } from "@nestjs/graphql"
-import { Platform } from "@typedefs"
+import { GraphQLTypePlatform, Platform } from "@typedefs"
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator"
 
 @InputType()
@@ -19,7 +19,11 @@ export class VerifyMessageInput {
     @IsNotEmpty()
     signedMessage: string
 
-    @Field(() => Platform, { description: "Platform used to verify signature", defaultValue: Platform.Evm })
+    @Field(() => GraphQLTypePlatform, {
+        nullable: true,
+        description: "Platform used to verify signature",
+        defaultValue: Platform.Evm,
+    })
     @IsEnum(Platform)
     @IsOptional()
     platform: Platform = Platform.Evm

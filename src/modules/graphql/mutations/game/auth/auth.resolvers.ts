@@ -13,7 +13,11 @@ import { GraphQLSuccessMessage } from "../../../interceptors"
 import { GraphQLTransformInterceptor } from "../../../interceptors"
 import { UseGuards, UseInterceptors } from "@nestjs/common"
 import { GraphQLSignatureGuard } from "@modules/passport"
-import { VerifyMessageInput, VerifyMessageResponse } from "@modules/graphql/mutations/game/auth/dto"
+import {
+    VerifyMessageInput,
+    VerifyMessageResponse,
+    VerifyMessageResponseData,
+} from "@modules/graphql/mutations/game/auth/dto"
 
 @Resolver()
 export class AuthResolvers {
@@ -43,7 +47,7 @@ export class AuthResolvers {
     @GraphQLSuccessMessage("Message verified successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
     @Mutation(() => VerifyMessageResponse)
-    public async verifyMessage(@Args("input") input: VerifyMessageInput) {
+    public async verifyMessage(@Args("input") input: VerifyMessageInput): Promise<VerifyMessageResponseData> {
         return await this.authService.verifyMessage(input)
     }
 }
