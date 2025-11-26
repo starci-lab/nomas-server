@@ -4,7 +4,7 @@ import { InjectWinston } from "@winston"
 import { Observable, throwError } from "rxjs"
 import { catchError, tap } from "rxjs/operators"
 import { Logger } from "winston"
-import { trace } from "@opentelemetry/api"
+import * as Sentry from "@sentry/node"
 import { inspect } from "util"
 import { Request } from "express"
 
@@ -25,11 +25,12 @@ export class GraphQLLoggerInterceptor implements NestInterceptor {
         const args = this.sanitizeArgs(gqlContext.getArgs())
         const startedAt = Date.now()
 
-        // Extract traceId from OpenTelemetry if available
-        const currentSpan = trace.getActiveSpan()
-        const traceId = currentSpan?.spanContext().traceId
+        // we need to get the trace id from the span of sentry
+        const span = Sentry.getActiveSpan()
+        const traceId = span?.spanContext().traceId
 
         const ctxValue = gqlContext.getContext<{ user?: unknown; requestId?: string; req?: Request }>()
+        // TODO: add user in context for tracing
         // const userId = ctxValue?.user?.id
         const requestId = ctxValue?.requestId
         const req = ctxValue?.req
@@ -37,7 +38,7 @@ export class GraphQLLoggerInterceptor implements NestInterceptor {
 
         return next.handle().pipe(
             tap(() => {
-                this.logger.warn("GraphQL Resolver Log", {
+                this.logger.info("GraphQL Resolver Log", {
                     path,
                     traceId,
                     requestId,

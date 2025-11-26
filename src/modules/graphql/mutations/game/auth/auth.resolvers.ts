@@ -1,26 +1,25 @@
 import { Args, Mutation, Resolver } from "@nestjs/graphql"
 import { AuthService } from "./auth.service"
-import { 
-    RequestColyseusEphemeralJwtInput, 
-    RequestColyseusEphemeralJwtResponse, 
+import {
+    RequestColyseusEphemeralJwtInput,
+    RequestColyseusEphemeralJwtResponse,
     RequestColyseusEphemeralJwtResponseData,
-    RequestSignatureInput, 
-    RequestSignatureResponse, 
-    RequestSignatureResponseData 
+    RequestSignatureInput,
+    RequestSignatureResponse,
+    RequestSignatureResponseData,
 } from "./auth.dto"
 import { ThrottlerConfig, UseThrottler } from "@modules/throttler"
 import { GraphQLSuccessMessage } from "../../../interceptors"
 import { GraphQLTransformInterceptor } from "../../../interceptors"
 import { UseGuards, UseInterceptors } from "@nestjs/common"
 import { GraphQLSignatureGuard } from "@modules/passport"
+import { VerifyMessageInput, VerifyMessageResponse } from "@modules/graphql/mutations/game/auth/dto"
 
 @Resolver()
 export class AuthResolvers {
-    constructor(
-        private readonly authService: AuthService
-    ) {}
+    constructor(private readonly authService: AuthService) {}
 
-    @UseThrottler(ThrottlerConfig.Strict) 
+    @UseThrottler(ThrottlerConfig.Strict)
     @GraphQLSuccessMessage("Colyseus ephemeral JWT requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
     @UseGuards(GraphQLSignatureGuard)
@@ -32,13 +31,19 @@ export class AuthResolvers {
         return await this.authService.requestColyseusEphemeralJwt()
     }
 
-    @UseThrottler(ThrottlerConfig.Soft) 
+    @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Signature requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
     @Mutation(() => RequestSignatureResponse)
-    async requestSignature(
-        @Args("input") input: RequestSignatureInput,
-    ): Promise<RequestSignatureResponseData> {
+    async requestSignature(@Args("input") input: RequestSignatureInput): Promise<RequestSignatureResponseData> {
         return await this.authService.requestSignature(input)
     }
-}   
+
+    @UseThrottler(ThrottlerConfig.Soft)
+    @GraphQLSuccessMessage("Message verified successfully")
+    @UseInterceptors(GraphQLTransformInterceptor)
+    @Mutation(() => VerifyMessageResponse)
+    public async verifyMessage(@Args("input") input: VerifyMessageInput) {
+        return await this.authService.verifyMessage(input)
+    }
+}

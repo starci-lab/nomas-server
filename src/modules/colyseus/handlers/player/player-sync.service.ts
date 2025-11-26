@@ -1,5 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { Connection } from "mongoose"
+import { InjectGameMongoose, UserSchema } from "@modules/databases"
 
 /**
  * Player Sync Service - Handles syncing player data to database
@@ -8,6 +10,10 @@ import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
 @Injectable()
 export class PlayerSyncService {
     private readonly logger = new Logger(PlayerSyncService.name)
+    constructor(
+        @InjectGameMongoose()
+        private readonly connection: Connection,
+    ) {}
 
     /**
      * Sync player tokens to database
@@ -22,10 +28,9 @@ export class PlayerSyncService {
             }
 
             // TODO: Implement actual DB update based on your schema
-            // Example: await this.connection.model('User').updateOne(
-            //     { accountAddress: player.walletAddress },
-            //     { $set: { tokens: player.tokens } }
-            // )
+            await this.connection
+                .model<UserSchema>(UserSchema.name)
+                .updateOne({ accountAddress: player.walletAddress }, { $set: { tokens: player.tokens } })
 
             this.logger.debug(`💾 Synced tokens to DB for player ${player.walletAddress}: ${player.tokens} tokens`)
             return true

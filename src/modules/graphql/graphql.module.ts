@@ -9,9 +9,10 @@ import { GameMutationsModule } from "./mutations"
 import { GraphQLExceptionFilter } from "@modules/graphql/exception-filter/graphql-exception.filter"
 import { GraphQLLoggerInterceptor } from "./interceptors"
 import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core"
-// import { formatGraphQLError } from "./common"
 
-@Module({})
+@Module({
+    imports: [],
+})
 export class GraphQLModule extends ConfigurableModuleClass {
     static register(options: typeof OPTIONS_TYPE) {
         // register the module

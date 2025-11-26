@@ -36,6 +36,8 @@ export const envConfig = () => ({
     },
     secret: {
         jwt: process.env.JWT_SECRET || "secret",
+        refreshTokenExpiration: process.env.JWT_REFRESH_TOKEN_EXPIRATION || "30d",
+        accessTokenExpiration: process.env.JWT_ACCESS_TOKEN_EXPIRATION || "15d",
     },
     ports: {
         core: process.env.PORT ?? 3000,
