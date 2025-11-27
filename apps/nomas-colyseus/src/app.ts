@@ -67,7 +67,6 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
         }),
         PrometheusModule.register({
             isGlobal: true,
-            path: "/metrics",
             defaultMetrics: {
                 enabled: true,
             },

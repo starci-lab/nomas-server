@@ -1,6 +1,5 @@
 import "reflect-metadata"
 import { PrometheusService } from "../providers/prometheus.service"
-import { MetricNames } from "../constants/metric-names"
 
 export interface TrackMetricOptions {
     /**
@@ -43,15 +42,15 @@ const PROMETHEUS_SERVICE_KEY = Symbol("prometheus:service")
 
 /**
  * Generic decorator to track metrics (counter or histogram)
- * 
+ *
  * @example
  * ```typescript
- * @TrackMetric({ 
+ * @TrackMetric({
  *   metricName: MetricNames.PET_BOUGHT_TOTAL,
  *   labels: ['petType']
  * })
  * async handleBuyPet(payload: { petType: string }) { ... }
- * 
+ *
  * @TrackMetric({
  *   metricName: MetricNames.ACTION_DURATION_SECONDS,
  *   type: 'histogram',
@@ -73,11 +72,12 @@ export function TrackMetric(options: TrackMetricOptions) {
 
             // Try to get from global app context
             try {
-                const app = (globalThis as { __APP__?: { get: (token: any, options?: { strict?: boolean }) => any } }).__APP__
+                const app = (globalThis as { __APP__?: { get: (token: any, options?: { strict?: boolean }) => any } })
+                    .__APP__
                 if (app) {
                     prometheusService = app.get(PrometheusService, { strict: false })
                 }
-            } catch (error) {
+            } catch {
                 // Service not available, skip tracking
             }
 
@@ -94,51 +94,76 @@ export function TrackMetric(options: TrackMetricOptions) {
             const startTime = trackDuration ? Date.now() : undefined
             let labels: Record<string, string | number> = {}
 
-            // Extract labels from arguments
-            if (options.labels && options.labels.length > 0) {
-                for (const label of options.labels) {
-                    if (typeof label === "string") {
-                        // Extract from arguments by property path
-                        const value = extractValueFromArgs(args, label)
-                        if (value !== undefined) {
-                            // Convert property path to label name (e.g., 'petType' -> 'pet_type')
-                            const labelName = label.split(".").pop()?.replace(/([A-Z])/g, "_$1").toLowerCase() || label
-                            labels[labelName] = String(value)
+            // Extract labels from arguments (wrap in try-catch to prevent errors from breaking method execution)
+            try {
+                if (options.labels && options.labels.length > 0) {
+                    for (const label of options.labels) {
+                        try {
+                            if (typeof label === "string") {
+                                // Extract from arguments by property path
+                                const value = extractValueFromArgs(args, label)
+                                if (value !== undefined) {
+                                    // Convert property path to label name (e.g., 'petType' -> 'pet_type')
+                                    const labelName =
+                                        label
+                                            .split(".")
+                                            .pop()
+                                            ?.replace(/([A-Z])/g, "_$1")
+                                            .toLowerCase() || label
+                                    labels[labelName] = String(value)
+                                }
+                            } else if (typeof label === "function") {
+                                // Use extractor function
+                                const extractedLabels = label(args)
+                                labels = { ...labels, ...extractedLabels }
+                            }
+                        } catch (labelError) {
+                            // Log label extraction error but continue with other labels
+                            console.error(`Error extracting label for metric ${options.metricName}:`, labelError)
                         }
-                    } else if (typeof label === "function") {
-                        // Use extractor function
-                        const extractedLabels = label(args)
-                        labels = { ...labels, ...extractedLabels }
                     }
                 }
+            } catch (labelExtractionError) {
+                // Log label extraction error but don't fail the method
+                console.error(`Error during label extraction for metric ${options.metricName}:`, labelExtractionError)
+                // Continue with empty labels - method execution should not be affected
             }
 
             try {
                 const result = await originalMethod.apply(this, args)
 
-                // Track success metric
-                if (metricType === "counter") {
-                    prometheusService.incrementCounter(
-                        options.metricName,
-                        labels,
-                        options.incrementValue || 1,
-                    )
-                } else if (metricType === "histogram") {
-                    if (trackDuration && startTime) {
-                        const duration = (Date.now() - startTime) / 1000 // Convert to seconds
-                        prometheusService.observeHistogram(options.metricName, duration, labels)
+                // Track success metric (wrap in try-catch to prevent tracking errors from affecting the result)
+                try {
+                    if (metricType === "counter") {
+                        prometheusService.incrementCounter(options.metricName, labels, options.incrementValue || 1)
+                    } else if (metricType === "histogram") {
+                        if (trackDuration && startTime) {
+                            const duration = (Date.now() - startTime) / 1000 // Convert to seconds
+                            prometheusService.observeHistogram(options.metricName, duration, labels)
+                        }
                     }
+                } catch (trackingError) {
+                    // Log tracking error but don't affect the method result
+                    console.error(`Error tracking metric ${options.metricName}:`, trackingError)
                 }
 
+                // Always return the original method's result (defensive check to ensure we never lose the return value)
+                // Note: result can be null/undefined if that's what the original method returns, which is valid
                 return result
             } catch (error) {
-                // Track error if enabled
+                // Track error if enabled (wrap in try-catch to prevent tracking errors from affecting the original error)
                 if (options.trackErrors) {
-                    const errorMetricName = options.errorMetricName || options.metricName.replace("_total", "_errors_total")
-                    prometheusService.incrementCounter(errorMetricName, {
-                        ...labels,
-                        error_type: error?.constructor?.name || "UnknownError",
-                    })
+                    try {
+                        const errorMetricName =
+                            options.errorMetricName || options.metricName.replace("_total", "_errors_total")
+                        prometheusService.incrementCounter(errorMetricName, {
+                            ...labels,
+                            error_type: error?.constructor?.name || "UnknownError",
+                        })
+                    } catch (trackingError) {
+                        // Log tracking error but don't affect the original error
+                        console.error(`Error tracking error metric for ${options.metricName}:`, trackingError)
+                    }
                 }
 
                 throw error
@@ -182,4 +207,3 @@ function extractValueFromArgs(args: any[], path: string): any {
 
     return value
 }
-

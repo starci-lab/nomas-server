@@ -23,25 +23,27 @@ import { TrackGraphQL } from "@modules/prometheus/decorators"
 export class StaticResolver {
     constructor(private readonly staticService: StaticService) {}
 
-    @TrackGraphQL({ operationType: "query" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Pets fetched successfully")
     @Query(() => PetsResponse, {
         name: "gamePets",
         description: "Return a full list of supported pet species, including their base stats and income properties.",
     })
+    @TrackGraphQL({ operationType: "query" })
     async pets(): Promise<Array<PetSchema>> {
         return this.staticService.pets()
     }
 
-    @TrackGraphQL({ operationType: "query" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Store items fetched successfully")
     @Query(() => StoreItemsResponse, {
         name: "gameStoreItems",
         description: "Return all store items available for purchase, including cost, rarity, and category metadata.",
     })
+    @TrackGraphQL({ operationType: "query" })
     async storeItems(): Promise<Array<StoreItemSchema>> {
-        return this.staticService.storeItems()
+        const result = this.staticService.storeItems()
+        // Ensure we always return an array, even if service returns null/undefined
+        return result ?? []
     }
 }
