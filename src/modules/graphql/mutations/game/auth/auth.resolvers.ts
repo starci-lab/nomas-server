@@ -24,12 +24,12 @@ import { TrackGraphQL } from "@modules/prometheus/decorators"
 export class AuthResolvers {
     constructor(private readonly authService: AuthService) {}
 
-    @TrackGraphQL({ operationType: "mutation" })
     @UseThrottler(ThrottlerConfig.Strict)
     @GraphQLSuccessMessage("Colyseus ephemeral JWT requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
     @UseGuards(GraphQLSignatureGuard)
     @Mutation(() => RequestColyseusEphemeralJwtResponse)
+    @TrackGraphQL({ operationType: "mutation" })
     async requestColyseusEphemeralJwt(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         @Args("input") _: RequestColyseusEphemeralJwtInput,
@@ -37,20 +37,20 @@ export class AuthResolvers {
         return await this.authService.requestColyseusEphemeralJwt()
     }
 
-    @TrackGraphQL({ operationType: "mutation" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Signature requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
     @Mutation(() => RequestSignatureResponse)
+    @TrackGraphQL({ operationType: "mutation" })
     async requestSignature(@Args("input") input: RequestSignatureInput): Promise<RequestSignatureResponseData> {
         return await this.authService.requestSignature(input)
     }
 
-    @TrackGraphQL({ operationType: "mutation" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Message verified successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
     @Mutation(() => VerifyMessageResponse)
+    @TrackGraphQL({ operationType: "mutation" })
     public async verifyMessage(@Args("input") input: VerifyMessageInput): Promise<VerifyMessageResponseData> {
         return await this.authService.verifyMessage(input)
     }

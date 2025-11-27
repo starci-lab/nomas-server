@@ -13,7 +13,7 @@ export class PetsResponse extends AbstractGraphQLResponse implements IAbstractGr
         description: "List of pets returned by the query.",
         nullable: true,
     })
-    data?: Array<PetSchema>
+        data?: Array<PetSchema>
 }
 
 /**
@@ -30,5 +30,5 @@ export class StoreItemsResponse
         description: "List of store items returned by the query.",
         nullable: true,
     })
-    data?: Array<StoreItemSchema>
+        data?: Array<StoreItemSchema>
 }

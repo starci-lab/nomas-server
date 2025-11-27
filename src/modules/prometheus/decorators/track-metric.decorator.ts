@@ -1,5 +1,16 @@
 import "reflect-metadata"
 import { PrometheusService } from "../providers/prometheus.service"
+import { Logger } from "@nestjs/common"
+
+type LabelExtractor = (args: unknown[], result?: unknown) => Record<string, string | number>
+
+interface NestAppLike {
+    get<T = unknown>(token: unknown, options?: { strict?: boolean }): T
+}
+
+interface GlobalAppContext {
+    __APP__?: NestAppLike
+}
 
 export interface TrackMetricOptions {
     /**
@@ -22,7 +33,7 @@ export interface TrackMetricOptions {
      * - String: property path in arguments (e.g., 'petType', 'payload.petType')
      * - Function: extractor function that receives (args, result) and returns label values
      */
-    labels?: Array<string | ((args: any[], result?: any) => Record<string, string | number>)>
+    labels?: Array<string | LabelExtractor>
     /**
      * Increment value for counter (default: 1)
      */
@@ -61,19 +72,19 @@ const PROMETHEUS_SERVICE_KEY = Symbol("prometheus:service")
  * ```
  */
 export function TrackMetric(options: TrackMetricOptions) {
-    return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
-        const originalMethod = descriptor.value
+    const logger = new Logger(TrackMetric.name)
+    return function (target: object, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value as (...args: unknown[]) => Promise<unknown> | unknown
         const metricType = options.type || "counter"
         const trackDuration = options.trackDuration || false
 
-        descriptor.value = async function (...args: any[]) {
+        descriptor.value = async function (...args: unknown[]) {
             // Get PrometheusService from DI container
             let prometheusService: PrometheusService | undefined
 
             // Try to get from global app context
             try {
-                const app = (globalThis as { __APP__?: { get: (token: any, options?: { strict?: boolean }) => any } })
-                    .__APP__
+                const app = (globalThis as GlobalAppContext).__APP__
                 if (app) {
                     prometheusService = app.get(PrometheusService, { strict: false })
                 }
@@ -82,8 +93,11 @@ export function TrackMetric(options: TrackMetricOptions) {
             }
 
             // Try to get from injected property
-            if (!prometheusService && this[PROMETHEUS_SERVICE_KEY]) {
-                prometheusService = this[PROMETHEUS_SERVICE_KEY]
+            if (!prometheusService) {
+                const injectedService = (this as Record<symbol, PrometheusService | undefined>)[PROMETHEUS_SERVICE_KEY]
+                if (injectedService) {
+                    prometheusService = injectedService
+                }
             }
 
             if (!prometheusService) {
@@ -119,13 +133,13 @@ export function TrackMetric(options: TrackMetricOptions) {
                             }
                         } catch (labelError) {
                             // Log label extraction error but continue with other labels
-                            console.error(`Error extracting label for metric ${options.metricName}:`, labelError)
+                            logger.error(`Error extracting label for metric ${options.metricName}:`, labelError)
                         }
                     }
                 }
             } catch (labelExtractionError) {
                 // Log label extraction error but don't fail the method
-                console.error(`Error during label extraction for metric ${options.metricName}:`, labelExtractionError)
+                logger.error(`Error during label extraction for metric ${options.metricName}:`, labelExtractionError)
                 // Continue with empty labels - method execution should not be affected
             }
 
@@ -144,7 +158,7 @@ export function TrackMetric(options: TrackMetricOptions) {
                     }
                 } catch (trackingError) {
                     // Log tracking error but don't affect the method result
-                    console.error(`Error tracking metric ${options.metricName}:`, trackingError)
+                    logger.error(`Error tracking metric ${options.metricName}:`, trackingError)
                 }
 
                 // Always return the original method's result (defensive check to ensure we never lose the return value)
@@ -162,7 +176,7 @@ export function TrackMetric(options: TrackMetricOptions) {
                         })
                     } catch (trackingError) {
                         // Log tracking error but don't affect the original error
-                        console.error(`Error tracking error metric for ${options.metricName}:`, trackingError)
+                        logger.error(`Error tracking error metric for ${options.metricName}:`, trackingError)
                     }
                 }
 
@@ -178,28 +192,36 @@ export function TrackMetric(options: TrackMetricOptions) {
  * Helper function to extract value from arguments by property path
  * Supports nested paths like 'payload.petType'
  */
-function extractValueFromArgs(args: any[], path: string): any {
+function extractValueFromArgs(args: unknown[], path: string): unknown {
     if (!args || args.length === 0) {
         return undefined
     }
 
     const parts = path.split(".")
-    let value: any = args
+    let value: unknown = args
 
     for (const part of parts) {
         if (Array.isArray(value)) {
             // If it's an array, try to find the value in any object
             for (const item of value) {
-                if (item && typeof item === "object" && part in item) {
-                    value = item[part]
-                    break
+                if (item && typeof item === "object") {
+                    const recordItem = item as Record<string, unknown>
+                    if (part in recordItem) {
+                        value = recordItem[part]
+                        break
+                    }
                 }
             }
             if (Array.isArray(value)) {
                 return undefined
             }
-        } else if (value && typeof value === "object" && part in value) {
-            value = value[part]
+        } else if (value && typeof value === "object") {
+            const recordValue = value as Record<string, unknown>
+            if (part in recordValue) {
+                value = recordValue[part]
+            } else {
+                return undefined
+            }
         } else {
             return undefined
         }

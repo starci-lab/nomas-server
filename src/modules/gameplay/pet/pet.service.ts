@@ -277,15 +277,15 @@ export class PetGameService {
         const petStatsSummary = stateRoomWithStats.getPetStatsSummary
             ? stateRoomWithStats.getPetStatsSummary(pet)
             : {
-                  id: pet.id,
-                  petType: pet.petType,
-                  hunger: Math.round(pet.hunger),
-                  happiness: Math.round(pet.happiness),
-                  cleanliness: Math.round(pet.cleanliness || 100),
-                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
-                  lastUpdated: pet.lastUpdated,
-                  poops: pet.poops || [],
-              }
+                id: pet.id,
+                petType: pet.petType,
+                hunger: Math.round(pet.hunger),
+                happiness: Math.round(pet.happiness),
+                cleanliness: Math.round(pet.cleanliness || 100),
+                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                lastUpdated: pet.lastUpdated,
+                poops: pet.poops || [],
+            }
 
         return {
             success: true,
@@ -339,15 +339,15 @@ export class PetGameService {
         const petStatsSummary = stateRoomWithStats.getPetStatsSummary
             ? stateRoomWithStats.getPetStatsSummary(pet)
             : {
-                  id: pet.id,
-                  petType: pet.petType,
-                  hunger: Math.round(pet.hunger),
-                  happiness: Math.round(pet.happiness),
-                  cleanliness: Math.round(pet.cleanliness || 100),
-                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
-                  lastUpdated: pet.lastUpdated,
-                  poops: pet.poops || [],
-              }
+                id: pet.id,
+                petType: pet.petType,
+                hunger: Math.round(pet.hunger),
+                happiness: Math.round(pet.happiness),
+                cleanliness: Math.round(pet.cleanliness || 100),
+                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                lastUpdated: pet.lastUpdated,
+                poops: pet.poops || [],
+            }
 
         return {
             success: true,
@@ -443,15 +443,15 @@ export class PetGameService {
         const petStatsSummary = stateRoomWithStats.getPetStatsSummary
             ? stateRoomWithStats.getPetStatsSummary(pet)
             : {
-                  id: pet.id,
-                  petType: pet.petType,
-                  hunger: Math.round(pet.hunger),
-                  happiness: Math.round(pet.happiness),
-                  cleanliness: Math.round(pet.cleanliness || 100),
-                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
-                  lastUpdated: pet.lastUpdated,
-                  poops: pet.poops || [],
-              }
+                id: pet.id,
+                petType: pet.petType,
+                hunger: Math.round(pet.hunger),
+                happiness: Math.round(pet.happiness),
+                cleanliness: Math.round(pet.cleanliness || 100),
+                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                lastUpdated: pet.lastUpdated,
+                poops: pet.poops || [],
+            }
 
         return {
             success: true,

@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from "@nestjs/common"
+import { Injectable, Logger } from "@nestjs/common"
 import { InjectMetric } from "@willsoto/nestjs-prometheus"
 import { Counter, Gauge, Histogram } from "prom-client"
 import { MetricNames } from "../constants/metric-names"

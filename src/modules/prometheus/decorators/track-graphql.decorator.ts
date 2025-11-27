@@ -1,5 +1,6 @@
 import { PrometheusService } from "../providers/prometheus.service"
 import { MetricNames } from "../constants/metric-names"
+import { Logger } from "@nestjs/common"
 
 const PROMETHEUS_SERVICE_KEY = Symbol("prometheus:service")
 
@@ -37,7 +38,16 @@ export interface TrackGraphQLOptions {
  * async getUser(...) { ... }
  * ```
  */
+interface NestAppLike {
+    get<T = unknown>(token: unknown, options?: { strict?: boolean }): T
+}
+
+interface GlobalAppContext {
+    __APP__?: NestAppLike
+}
+
 export function TrackGraphQL(options?: TrackGraphQLOptions) {
+    const logger = new Logger(TrackGraphQL.name)
     const opts = options || {}
     const trackErrors = opts.trackErrors !== false // Default to true
 
@@ -66,24 +76,23 @@ export function TrackGraphQL(options?: TrackGraphQLOptions) {
         }
 
         // Single wrapper that handles both counter and histogram tracking
-        descriptor.value = async function (...args: any[]) {
+        descriptor.value = async function (...args: unknown[]) {
             // Get PrometheusService from DI container
             let prometheusService: PrometheusService | undefined
 
             // Try to get from global app context
             try {
-                const app = (globalThis as { __APP__?: { get: (token: any, options?: { strict?: boolean }) => any } })
-                    .__APP__
+                const app = (globalThis as GlobalAppContext).__APP__
                 if (app) {
                     prometheusService = app.get(PrometheusService, { strict: false })
                 } else {
-                    console.warn(
+                    logger.warn(
                         `[TrackGraphQL] globalThis.__APP__ is not available for ${operationName}. Metrics will not be tracked.`,
                     )
                 }
             } catch (error) {
                 // Service not available, log for debugging
-                console.warn(
+                logger.warn(
                     `[TrackGraphQL] Failed to get PrometheusService from global context for ${operationName}:`,
                     error,
                 )
@@ -96,7 +105,7 @@ export function TrackGraphQL(options?: TrackGraphQLOptions) {
 
             // If service not available, just execute original method and await the result
             if (!prometheusService) {
-                console.warn(
+                logger.warn(
                     `[TrackGraphQL] PrometheusService not available for ${operationName}. Method will execute without tracking.`,
                 )
                 return await originalMethod.apply(this, args)
@@ -118,7 +127,7 @@ export function TrackGraphQL(options?: TrackGraphQLOptions) {
                     prometheusService.observeHistogram(MetricNames.GRAPHQL_REQUESTS_DURATION_SECONDS, duration, labels)
                 } catch (trackingError) {
                     // Log tracking error but don't affect the method result
-                    console.error(`Error tracking GraphQL metrics for ${operationName}:`, trackingError)
+                    logger.error(`Error tracking GraphQL metrics for ${operationName}:`, trackingError)
                 }
 
                 // Always return the original method's result (defensive check to ensure we never lose the return value)
@@ -136,7 +145,7 @@ export function TrackGraphQL(options?: TrackGraphQLOptions) {
                         })
                     } catch (trackingError) {
                         // Log tracking error but don't affect the original error
-                        console.error(`Error tracking error metric for ${operationName}:`, trackingError)
+                        this.logger.error(`Error tracking error metric for ${operationName}:`, trackingError)
                     }
                 }
 
