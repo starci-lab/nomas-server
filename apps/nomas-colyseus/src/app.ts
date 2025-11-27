@@ -14,6 +14,7 @@ import { GraphQLModule } from "@modules/graphql"
 import { WinstonLevel, WinstonLogType, WinstonModule } from "@winston"
 import { AppService } from "@apps/nomas-server/src/app.service"
 import { TestController } from "./test.controller"
+import { PrometheusModule } from "@modules/prometheus/prometheus.module"
 
 @Module({
     imports: [
@@ -63,6 +64,13 @@ import { TestController } from "./test.controller"
         }),
         SentryModule.register({
             isGlobal: true,
+        }),
+        PrometheusModule.register({
+            isGlobal: true,
+            path: "/metrics",
+            defaultMetrics: {
+                enabled: true,
+            },
         }),
     ],
     controllers: [TestController],
