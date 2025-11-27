@@ -18,11 +18,13 @@ import {
     VerifyMessageResponse,
     VerifyMessageResponseData,
 } from "@modules/graphql/mutations/game/auth/dto"
+import { TrackGraphQL } from "@modules/prometheus/decorators"
 
 @Resolver()
 export class AuthResolvers {
     constructor(private readonly authService: AuthService) {}
 
+    @TrackGraphQL({ operationType: "mutation" })
     @UseThrottler(ThrottlerConfig.Strict)
     @GraphQLSuccessMessage("Colyseus ephemeral JWT requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
@@ -35,6 +37,7 @@ export class AuthResolvers {
         return await this.authService.requestColyseusEphemeralJwt()
     }
 
+    @TrackGraphQL({ operationType: "mutation" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Signature requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
@@ -43,6 +46,7 @@ export class AuthResolvers {
         return await this.authService.requestSignature(input)
     }
 
+    @TrackGraphQL({ operationType: "mutation" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Message verified successfully")
     @UseInterceptors(GraphQLTransformInterceptor)

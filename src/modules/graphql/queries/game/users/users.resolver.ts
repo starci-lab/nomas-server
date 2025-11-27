@@ -5,6 +5,7 @@ import { UseInterceptors } from "@nestjs/common"
 import { UserResponse } from "./users.dto"
 import { UseThrottler, ThrottlerConfig } from "@modules/throttler"
 import { GraphQLSuccessMessage, GraphQLTransformInterceptor } from "../../../interceptors"
+import { TrackGraphQL } from "@modules/prometheus/decorators"
 
 @Resolver()
 export class UsersResolver {
@@ -12,6 +13,7 @@ export class UsersResolver {
         private readonly usersService: UsersService,
     ) {}
 
+    @TrackGraphQL({ operationType: "query" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("User fetched successfully")
     @Query(() => UserResponse, {

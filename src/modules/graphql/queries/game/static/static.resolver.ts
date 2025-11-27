@@ -6,6 +6,7 @@ import { UseThrottler, ThrottlerConfig } from "@modules/throttler"
 import { PetSchema, StoreItemSchema } from "@modules/databases"
 import { GraphQLTransformInterceptor } from "../../../interceptors"
 import { PetsResponse, StoreItemsResponse } from "./static.dto"
+import { TrackGraphQL } from "@modules/prometheus/decorators"
 
 /**
  * Handles static read-only data used by the game.
@@ -22,6 +23,7 @@ import { PetsResponse, StoreItemsResponse } from "./static.dto"
 export class StaticResolver {
     constructor(private readonly staticService: StaticService) {}
 
+    @TrackGraphQL({ operationType: "query" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Pets fetched successfully")
     @Query(() => PetsResponse, {
@@ -32,6 +34,7 @@ export class StaticResolver {
         return this.staticService.pets()
     }
 
+    @TrackGraphQL({ operationType: "query" })
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Store items fetched successfully")
     @Query(() => StoreItemsResponse, {

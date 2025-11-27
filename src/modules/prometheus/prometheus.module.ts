@@ -2,6 +2,8 @@ import { DynamicModule, Module } from "@nestjs/common"
 import { ConfigurableModuleClass, OPTIONS_TYPE } from "./prometheus.module-definition"
 import { PrometheusModule as PrometheusCoreModule } from "@willsoto/nestjs-prometheus"
 import { PrometheusOptions } from "./types"
+import { MetricsProviders } from "./providers/metrics.registry"
+import { PrometheusService } from "./providers/prometheus.service"
 
 @Module({})
 export class PrometheusModule extends ConfigurableModuleClass {
@@ -12,6 +14,8 @@ export class PrometheusModule extends ConfigurableModuleClass {
         return {
             ...dynamicModule,
             imports: [prometheusCoreModule],
+            providers: [...MetricsProviders, PrometheusService],
+            exports: [PrometheusService],
         }
     }
 }

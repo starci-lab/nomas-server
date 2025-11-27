@@ -28,6 +28,7 @@ import {
     CreatePoopResult,
 } from "./pet.results"
 import { PlayerGameService } from "../player/player.service"
+import { TrackGameAction } from "@modules/prometheus/decorators"
 
 @Injectable()
 export class PetGameService {
@@ -35,6 +36,7 @@ export class PetGameService {
 
     constructor(@Inject(forwardRef(() => PlayerGameService)) private playerService: PlayerGameService) {}
 
+    @TrackGameAction("pet_bought", { labels: ["petType"] })
     async handleBuyPet({ room, sessionId, petType, petTypeId, isBuyPet }: BuyPetPayload): Promise<BuyPetResult> {
         const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
@@ -111,6 +113,7 @@ export class PetGameService {
         }
     }
 
+    @TrackGameAction("pet_removed")
     async handleRemovePet({ room, sessionId, petId }: RemovePetPayload): Promise<RemovePetResult> {
         const player = this.getPlayer(room.state as GameRoomColyseusSchema, sessionId)
         if (!player) {
@@ -169,6 +172,7 @@ export class PetGameService {
         }
     }
 
+    @TrackGameAction("pet_fed", { labels: ["foodType"], trackDuration: true })
     async handleFeedPet({ room, sessionId, petId, foodType }: FeedPetPayload): Promise<FeedPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
@@ -233,6 +237,7 @@ export class PetGameService {
         }
     }
 
+    @TrackGameAction("pet_played", { trackDuration: true })
     async handlePlayPet({ room, sessionId, petId }: PlayPetPayload): Promise<PlayPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
@@ -272,15 +277,15 @@ export class PetGameService {
         const petStatsSummary = stateRoomWithStats.getPetStatsSummary
             ? stateRoomWithStats.getPetStatsSummary(pet)
             : {
-                id: pet.id,
-                petType: pet.petType,
-                hunger: Math.round(pet.hunger),
-                happiness: Math.round(pet.happiness),
-                cleanliness: Math.round(pet.cleanliness || 100),
-                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
-                lastUpdated: pet.lastUpdated,
-                poops: pet.poops || [],
-            }
+                  id: pet.id,
+                  petType: pet.petType,
+                  hunger: Math.round(pet.hunger),
+                  happiness: Math.round(pet.happiness),
+                  cleanliness: Math.round(pet.cleanliness || 100),
+                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                  lastUpdated: pet.lastUpdated,
+                  poops: pet.poops || [],
+              }
 
         return {
             success: true,
@@ -293,6 +298,7 @@ export class PetGameService {
         }
     }
 
+    @TrackGameAction("pet_cleaned", { trackDuration: true })
     async handleCleanPet({ room, sessionId, petId }: DirectCleanPetPayload): Promise<CleanPetResult> {
         const { player, pet } = this.getPlayerAndPet(room.state as GameRoomColyseusSchema, sessionId, petId)
         if (!player || !pet) {
@@ -333,15 +339,15 @@ export class PetGameService {
         const petStatsSummary = stateRoomWithStats.getPetStatsSummary
             ? stateRoomWithStats.getPetStatsSummary(pet)
             : {
-                id: pet.id,
-                petType: pet.petType,
-                hunger: Math.round(pet.hunger),
-                happiness: Math.round(pet.happiness),
-                cleanliness: Math.round(pet.cleanliness || 100),
-                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
-                lastUpdated: pet.lastUpdated,
-                poops: pet.poops || [],
-            }
+                  id: pet.id,
+                  petType: pet.petType,
+                  hunger: Math.round(pet.hunger),
+                  happiness: Math.round(pet.happiness),
+                  cleanliness: Math.round(pet.cleanliness || 100),
+                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                  lastUpdated: pet.lastUpdated,
+                  poops: pet.poops || [],
+              }
 
         return {
             success: true,
@@ -437,15 +443,15 @@ export class PetGameService {
         const petStatsSummary = stateRoomWithStats.getPetStatsSummary
             ? stateRoomWithStats.getPetStatsSummary(pet)
             : {
-                id: pet.id,
-                petType: pet.petType,
-                hunger: Math.round(pet.hunger),
-                happiness: Math.round(pet.happiness),
-                cleanliness: Math.round(pet.cleanliness || 100),
-                overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
-                lastUpdated: pet.lastUpdated,
-                poops: pet.poops || [],
-            }
+                  id: pet.id,
+                  petType: pet.petType,
+                  hunger: Math.round(pet.hunger),
+                  happiness: Math.round(pet.happiness),
+                  cleanliness: Math.round(pet.cleanliness || 100),
+                  overallHealth: Math.round((pet.hunger + pet.happiness + (pet.cleanliness || 100)) / 3),
+                  lastUpdated: pet.lastUpdated,
+                  poops: pet.poops || [],
+              }
 
         return {
             success: true,
@@ -458,6 +464,7 @@ export class PetGameService {
         }
     }
 
+    @TrackGameAction("pet_poop_created")
     async handleCreatePoop({
         room,
         sessionId,

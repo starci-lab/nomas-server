@@ -14,6 +14,7 @@ import {
 import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSchema } from "@modules/colyseus/schemas"
 import { PlayerSyncService } from "../player/player-sync.service"
 import { MemdbStorageService, StoreItemSchema } from "@modules/databases"
+import { TrackGameAction } from "@modules/prometheus/decorators"
 
 /**
  * Inventory Event Handler - Business logic layer
@@ -29,6 +30,7 @@ export class InventoryEventHandler {
     ) {}
 
     @OnEvent(GameInventoryEvent.PurchaseItemRequested)
+    @TrackGameAction("item_purchased", { labels: ["itemType", "itemId"], trackDuration: true })
     async onPurchaseItem(payload: PurchaseInventoryItemPayload) {
         this.logger.debug(`Event received: ${GameInventoryEvent.PurchaseItemRequested}`)
         let result: PurchaseInventoryItemResult

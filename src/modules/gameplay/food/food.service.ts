@@ -4,6 +4,7 @@ import { PurchaseFoodPayload, GetFoodInventoryPayload, FeedPetWithFoodPayload } 
 import { InventoryGameService } from "../inventory/inventory.service"
 import { PlayerGameService } from "../player/player.service"
 import { PurchaseFoodResult, GetCatalogResult, GetFoodInventoryResult, FeedPetWithFoodResult } from "./food.results"
+import { TrackGameAction } from "@modules/prometheus/decorators"
 
 interface FoodItems {
     [key: string]: {
@@ -49,6 +50,7 @@ export class FoodGameService {
         return foodType in foodItems
     }
 
+    @TrackGameAction("food_purchased", { labels: ["itemType"], trackDuration: true })
     async handlePurchaseItem({
         room,
         sessionId,
