@@ -1,7 +1,0 @@
-export * from "./pet"
-export * from "./gameplay.module"
-export * from "./player"
-export * from "./food"
-export * from "./inventory/inventory.service"
-export * from "./inventory/inventory.module"
-export * from "./inventory/inventory.events"

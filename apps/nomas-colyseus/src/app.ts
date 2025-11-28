@@ -7,7 +7,6 @@ import { PassportModule } from "@modules/passport"
 import { BlockchainModule } from "@modules/blockchain"
 import { ColyseusModule } from "@modules/colyseus"
 import { EventModule } from "@modules/event"
-import { GameplayModule } from "@modules/gameplay"
 import { SentryCatchAllExceptionFilter, SentryModule } from "@modules/sentry"
 import { APP_FILTER } from "@nestjs/core"
 import { GraphQLModule } from "@modules/graphql"
@@ -28,9 +27,6 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
             isGlobal: true,
         }),
         PassportModule.register({
-            isGlobal: true,
-        }),
-        GameplayModule.register({
             isGlobal: true,
         }),
         // we require mongodb for the core module
