@@ -12,6 +12,8 @@ import {
     PoopSchemaClass,
     StoreItemSchema,
     StoreItemSchemaClass,
+    SystemSchema,
+    SystemSchemaClass,
 } from "./schemas"
 import { Connection } from "mongoose"
 import { envConfig } from "@modules/env"
@@ -28,30 +30,33 @@ export class GameMongooseModule extends ConfigurableModuleClass {
         const url = `mongodb://${username}:${password}@${host}:${port}`
 
         const imports = [
-            NestMongooseModule.forRoot(
-                url, {
-                    retryWrites: true,
-                    retryReads: true,
-                    authSource: "admin",
-                    dbName: database,
-                    connectionName: GAME_MONGOOSE_CONNECTION_NAME,
-                }),
+            NestMongooseModule.forRoot(url, {
+                retryWrites: true,
+                retryReads: true,
+                authSource: "admin",
+                dbName: database,
+                connectionName: GAME_MONGOOSE_CONNECTION_NAME,
+            }),
             this.forFeature(),
         ]
         if (withSeeder) {
-            imports.push(GameSeedersModule.register({
-                manualTrigger: manualTrigger,
-                isGlobal,
-            }))
+            imports.push(
+                GameSeedersModule.register({
+                    manualTrigger: manualTrigger,
+                    isGlobal,
+                }),
+            )
         }
         if (loadToMemory) {
-            imports.push(GameMemdbModule.register({
-                isGlobal,
-            }))
+            imports.push(
+                GameMemdbModule.register({
+                    isGlobal,
+                }),
+            )
         }
         return {
             ...dynamicModule,
-            imports
+            imports,
         }
     }
 
@@ -63,14 +68,12 @@ export class GameMongooseModule extends ConfigurableModuleClass {
                     [
                         {
                             name: UserSchema.name,
-                            useFactory: (
-                                connection: Connection
-                            ) => {
+                            useFactory: (connection: Connection) => {
                                 // middleware register for deleteMany
                                 UserSchemaClass.pre("deleteMany", async function (next) {
                                     const { $in } = this.getFilter()._id
                                     await connection.model<OwnedPetSchema>(OwnedPetSchema.name).deleteMany({
-                                        user: { $in: $in }
+                                        user: { $in: $in },
                                     })
                                     next()
                                 })
@@ -78,7 +81,7 @@ export class GameMongooseModule extends ConfigurableModuleClass {
                                 UserSchemaClass.pre("deleteOne", async function (next) {
                                     const { _id } = this.getFilter()
                                     await connection.model<OwnedPetSchema>(OwnedPetSchema.name).deleteMany({
-                                        user: _id
+                                        user: _id,
                                     })
                                     next()
                                 })
@@ -87,24 +90,28 @@ export class GameMongooseModule extends ConfigurableModuleClass {
                         },
                         {
                             name: PetSchema.name,
-                            useFactory: () => PetSchemaClass
+                            useFactory: () => PetSchemaClass,
                         },
                         {
                             name: OwnedPetSchema.name,
-                            useFactory: () => OwnedPetSchemaClass
+                            useFactory: () => OwnedPetSchemaClass,
                         },
                         {
                             name: PoopSchema.name,
-                            useFactory: () => PoopSchemaClass
+                            useFactory: () => PoopSchemaClass,
                         },
                         {
                             name: StoreItemSchema.name,
-                            useFactory: () => StoreItemSchemaClass
+                            useFactory: () => StoreItemSchemaClass,
+                        },
+                        {
+                            name: SystemSchema.name,
+                            useFactory: () => SystemSchemaClass,
                         },
                     ],
-                    GAME_MONGOOSE_CONNECTION_NAME
-                )
-            ]
+                    GAME_MONGOOSE_CONNECTION_NAME,
+                ),
+            ],
         }
     }
 }

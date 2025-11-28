@@ -11,8 +11,10 @@ import { GameplayModule } from "@modules/gameplay"
 import { SentryCatchAllExceptionFilter, SentryModule } from "@modules/sentry"
 import { APP_FILTER } from "@nestjs/core"
 import { GraphQLModule } from "@modules/graphql"
+import { WinstonLevel, WinstonLogType, WinstonModule } from "@winston"
 import { AppService } from "@apps/nomas-server/src/app.service"
 import { TestController } from "./test.controller"
+import { PrometheusModule } from "@modules/prometheus/prometheus.module"
 
 @Module({
     imports: [
@@ -54,8 +56,20 @@ import { TestController } from "./test.controller"
             },
             isGlobal: true,
         }),
+        WinstonModule.register({
+            appName: "nomas-colyseus",
+            level: WinstonLevel.Info,
+            logTypes: [WinstonLogType.Console, WinstonLogType.Loki],
+            isGlobal: true,
+        }),
         SentryModule.register({
             isGlobal: true,
+        }),
+        PrometheusModule.register({
+            isGlobal: true,
+            defaultMetrics: {
+                enabled: true,
+            },
         }),
     ],
     controllers: [TestController],

@@ -11,8 +11,9 @@ import { AbstractGraphQLResponse, IAbstractGraphQLResponse } from "../../../comm
 export class PetsResponse extends AbstractGraphQLResponse implements IAbstractGraphQLResponse<Array<PetSchema>> {
     @Field(() => [PetSchema], {
         description: "List of pets returned by the query.",
+        nullable: true,
     })
-        data: Array<PetSchema>
+        data?: Array<PetSchema>
 }
 
 /**
@@ -26,7 +27,8 @@ export class StoreItemsResponse
     implements IAbstractGraphQLResponse<Array<StoreItemSchema>>
 {
     @Field(() => [StoreItemSchema], {
-        description: "List of liquidity pools returned by the query.",
+        description: "List of store items returned by the query.",
+        nullable: true,
     })
-        data: Array<StoreItemSchema>
+        data?: Array<StoreItemSchema>
 }

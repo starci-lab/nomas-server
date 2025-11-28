@@ -6,6 +6,7 @@ import { UseThrottler, ThrottlerConfig } from "@modules/throttler"
 import { PetSchema, StoreItemSchema } from "@modules/databases"
 import { GraphQLTransformInterceptor } from "../../../interceptors"
 import { PetsResponse, StoreItemsResponse } from "./static.dto"
+import { TrackGraphQL } from "@modules/prometheus/decorators"
 
 /**
  * Handles static read-only data used by the game.
@@ -28,6 +29,7 @@ export class StaticResolver {
         name: "gamePets",
         description: "Return a full list of supported pet species, including their base stats and income properties.",
     })
+    @TrackGraphQL({ operationType: "query" })
     async pets(): Promise<Array<PetSchema>> {
         return this.staticService.pets()
     }
@@ -38,7 +40,10 @@ export class StaticResolver {
         name: "gameStoreItems",
         description: "Return all store items available for purchase, including cost, rarity, and category metadata.",
     })
+    @TrackGraphQL({ operationType: "query" })
     async storeItems(): Promise<Array<StoreItemSchema>> {
-        return this.staticService.storeItems()
+        const result = this.staticService.storeItems()
+        // Ensure we always return an array, even if service returns null/undefined
+        return result ?? []
     }
 }

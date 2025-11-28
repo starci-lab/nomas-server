@@ -26,6 +26,7 @@
             "@apps/*": ["./apps/*"],
             "@exceptions": ["./src/exceptions"],
             "@modules/*": ["./src/modules/*"],
+            "@winston": ["./src/winston"],
             "@typedefs": ["./src/typedefs"],
             "@utils": ["./src/utils"]
         }

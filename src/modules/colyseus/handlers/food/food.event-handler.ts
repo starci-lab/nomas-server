@@ -26,6 +26,7 @@ import {
     InventoryItemColyseusSchema,
 } from "@modules/colyseus/schemas"
 import { PlayerSyncService } from "../player/player-sync.service"
+import { TrackGameAction } from "@modules/prometheus/decorators"
 
 /**
  * Food Event Handler - Business logic layer
@@ -61,6 +62,7 @@ export class FoodEventHandler {
     }
 
     @OnEvent(GameFoodEvent.PurchaseRequested)
+    @TrackGameAction("food_purchased", { labels: ["itemType"], trackDuration: true })
     async onPurchaseFood(payload: PurchaseFoodPayload) {
         this.logger.debug(`Event received: ${GameFoodEvent.PurchaseRequested}`)
         let result: PurchaseFoodResult

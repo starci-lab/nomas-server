@@ -1,4 +1,4 @@
-import { Catch, ExceptionFilter, ArgumentsHost, ExecutionContext } from "@nestjs/common"
+import { Catch, ExceptionFilter, ArgumentsHost, ExecutionContext, Logger } from "@nestjs/common"
 import { Observable } from "rxjs"
 import { AbstractGraphQLException } from "src/exceptions/graphql/base"
 import { GraphQLError } from "graphql"
@@ -12,6 +12,7 @@ import { GqlExecutionContext } from "@nestjs/graphql"
  */
 @Catch(AbstractGraphQLException)
 export class GraphQLExceptionFilter implements ExceptionFilter<AbstractGraphQLException> {
+    private readonly logger = new Logger(GraphQLExceptionFilter.name)
     @SentryExceptionCaptured()
     catch(exception: AbstractGraphQLException, host: ArgumentsHost): Observable<unknown> {
         // Try to get GraphQL context if available

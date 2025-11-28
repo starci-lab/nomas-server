@@ -14,7 +14,7 @@ import { ColyseusService } from "@modules/colyseus/colyseus.service"
     providers: [],
     exports: [],
 })
-export class ColyseusModule extends ConfigurableModuleClass {
+export class HandlersModule extends ConfigurableModuleClass {
     static forRoot(): DynamicModule {
         const dynamicModule = super.register({
             isGlobal: true,

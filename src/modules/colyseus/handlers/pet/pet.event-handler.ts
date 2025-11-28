@@ -24,7 +24,7 @@ import {
 import { MapSchema } from "@colyseus/schema"
 import { PlayerSyncService } from "../player/player-sync.service"
 import { DEFAULT_PET_PRICE } from "../constants"
-
+import { TrackGameAction } from "@modules/prometheus/decorators"
 /**
  * Pet Event Handler - Business logic layer
  * Handles all pet-related game logic directly without calling gameplay services
@@ -35,6 +35,7 @@ export class PetEventHandler {
     constructor(@Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService) {}
 
     @OnEvent(GamePetEvent.BuyRequested)
+    @TrackGameAction("pet_bought", { labels: ["petType"] })
     async onBuyPet(payload: BuyPetPayload) {
         try {
             const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
@@ -106,6 +107,7 @@ export class PetEventHandler {
     }
 
     @OnEvent(GamePetEvent.RemoveRequested)
+    @TrackGameAction("pet_removed", { labels: ["petId"] })
     async onRemovePet(payload: RemovePetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.RemoveRequested}`)
         try {
@@ -172,6 +174,7 @@ export class PetEventHandler {
     }
 
     @OnEvent(GamePetEvent.FeedRequested)
+    @TrackGameAction("pet_fed", { labels: ["foodType"], trackDuration: true })
     async onFeedPet(payload: FeedPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.FeedRequested}`)
         try {
@@ -348,6 +351,7 @@ export class PetEventHandler {
     }
 
     @OnEvent(GamePetEvent.Cleaned)
+    @TrackGameAction("pet_cleaned", { trackDuration: true })
     async onCleanedPet(payload: CleanedPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.Cleaned}`)
         try {
@@ -402,6 +406,7 @@ export class PetEventHandler {
     }
 
     @OnEvent(GamePetEvent.Played)
+    @TrackGameAction("pet_played", { trackDuration: true })
     async onPlayedPet(payload: PlayedPetPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.Played}`)
         try {
@@ -455,6 +460,7 @@ export class PetEventHandler {
     }
 
     @OnEvent(GamePetEvent.PoopCreated)
+    @TrackGameAction("pet_poop_created")
     async onPoopCreated(payload: CreatePoopPayload) {
         this.logger.debug(`Event received: ${GamePetEvent.PoopCreated}`)
         try {

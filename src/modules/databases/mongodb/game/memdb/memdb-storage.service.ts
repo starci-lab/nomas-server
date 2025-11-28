@@ -1,24 +1,29 @@
 import { Injectable, OnModuleInit } from "@nestjs/common"
 import { InjectGameMongoose } from "../decorators"
 import { Connection } from "mongoose"
-import { PetSchema, StoreItemSchema } from "../schemas"
+import { SystemSchema, PetSchema, StoreItemSchema, DefaultInfoSchema } from "../schemas"
 import { RetryService } from "@modules/mixin"
+import { PetId, SystemId } from "@modules/databases/mongodb/game/enums"
 
 @Injectable()
 export class MemdbStorageService implements OnModuleInit {
     // storage variables
     private pets: Array<PetSchema> = []
     private storeItems: Array<StoreItemSchema> = []
-    
+    private defaultInfo: DefaultInfoSchema = {
+        tokenNom: 10000,
+        defaultPetId: PetId.Chog,
+    }
+
     // constructor
     constructor(
-    private readonly retryService: RetryService,
-    @InjectGameMongoose()
-    private readonly connection: Connection,
+        private readonly retryService: RetryService,
+        @InjectGameMongoose()
+        private readonly connection: Connection,
     ) {}
 
     async onModuleInit() {
-        await Promise.all([this.loadPets(), this.loadStoreItems()])
+        await Promise.all([this.loadPets(), this.loadStoreItems(), this.loadDefaultInfo()])
     }
 
     private async loadPets() {
@@ -49,11 +54,32 @@ export class MemdbStorageService implements OnModuleInit {
         })
     }
 
+    private async loadDefaultInfo() {
+        await this.retryService.retry({
+            action: async () => {
+                const system = await this.connection
+                    .model<SystemSchema>(SystemSchema.name)
+                    .findOne({ displayId: SystemId.DefaultInfo })
+                    .lean<SystemSchema>()
+                    .exec()
+                if (system) {
+                    this.defaultInfo = system.value as DefaultInfoSchema
+                }
+            },
+            maxRetries: 50,
+            delay: 1000,
+        })
+    }
+
     public getPets(): Array<PetSchema> {
         return this.pets
     }
 
     public getStoreItems(): Array<StoreItemSchema> {
         return this.storeItems
+    }
+
+    public getDefaultInfo(): DefaultInfoSchema {
+        return this.defaultInfo
     }
 }

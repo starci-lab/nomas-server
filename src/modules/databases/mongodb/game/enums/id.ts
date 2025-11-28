@@ -67,3 +67,28 @@ registerEnumType(GraphQLTypeStoreItemId, {
         [StoreItemId.Broom]: { description: "Cleaning tool that restores your pet’s cleanliness stat." },
     },
 })
+
+/**
+ * Enum representing unique identifiers for system configurations in the game.
+ * Used to reference specific system settings, default values, and game-wide configurations.
+ */
+export enum SystemId {
+    DefaultInfo = "DefaultInfo",
+}
+
+/**
+ * GraphQL enum type for SystemId.
+ * Ensures system configuration references are type-safe and introspectable via GraphQL.
+ */
+export const GraphQLTypeSystemId = createEnumType(SystemId)
+
+registerEnumType(GraphQLTypeSystemId, {
+    name: "SystemId",
+    description: "Unique identifiers for system configurations that define game-wide settings and default values.",
+    valuesMap: {
+        [SystemId.DefaultInfo]: {
+            description:
+                "Default configuration system containing initial values for new users, such as starting token amount and default pet assignment.",
+        },
+    },
+})

@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
+import { Injectable, Logger, Inject, forwardRef, Optional } from "@nestjs/common"
 import { InjectConnection } from "@nestjs/mongoose"
 import { Connection, Model, ClientSession } from "mongoose"
 import { GameRoomColyseusSchema, PlayerColyseusSchema, InventoryItemColyseusSchema } from "@modules/colyseus/schemas"
@@ -8,6 +8,8 @@ import { StoreItemSchema } from "@modules/databases/mongodb/game/schemas/store-i
 import { PurchaseInventoryItemResult, GetInventoryResult } from "./inventory.results"
 import { GAME_MONGOOSE_CONNECTION_NAME } from "@modules/databases/mongodb/game/constants"
 import { MemdbStorageService } from "@modules/databases"
+import { TrackGameAction } from "@modules/prometheus/decorators"
+import { PrometheusService } from "@modules/prometheus/providers/prometheus.service"
 
 interface InventorySummary {
     totalItems: number
@@ -29,6 +31,9 @@ export class InventoryGameService {
         @Inject(forwardRef(() => PlayerGameService)) private playerService: PlayerGameService,
         @InjectConnection(GAME_MONGOOSE_CONNECTION_NAME) private connection: Connection,
         private readonly memdbStorageService: MemdbStorageService,
+        @Optional()
+        @Inject(PrometheusService)
+        private readonly prometheusService?: PrometheusService,
     ) {}
 
     // Lazy load model - chỉ tạo khi cần dùng
@@ -53,6 +58,7 @@ export class InventoryGameService {
         }
     }
 
+    @TrackGameAction("item_purchased", { labels: ["itemType", "itemId"], trackDuration: true })
     async handlePurchaseItem({
         room,
         sessionId,
@@ -201,10 +207,19 @@ export class InventoryGameService {
      * Only use this if memdb doesn't have the item (shouldn't happen in normal flow)
      */
     async getStoreItem(itemId: string): Promise<StoreItemSchema | null> {
+        const startTime = Date.now()
         try {
             const storeItem = await this.storeItemModel.findOne({ _id: itemId }).exec()
+            const duration = (Date.now() - startTime) / 1000
+            this.prometheusService?.recordDatabaseQueryDuration("store_items", "findOne", duration)
             return storeItem
         } catch (error) {
+            const duration = (Date.now() - startTime) / 1000
+            this.prometheusService?.recordDatabaseQueryDuration("store_items", "findOne", duration)
+            this.prometheusService?.incrementError(
+                error instanceof Error ? error.constructor.name : "UnknownError",
+                "InventoryGameService",
+            )
             this.logger.error(`Error getting store item: ${error instanceof Error ? error.message : "Unknown error"}`)
             throw error
         }

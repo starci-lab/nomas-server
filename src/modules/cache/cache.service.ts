@@ -1,55 +1,59 @@
-import { Injectable } from "@nestjs/common"
+import { Injectable, Inject, Optional } from "@nestjs/common"
 import { InjectRedisCache, InjectMemoryCache } from "./cache.decorators"
 import { Cache } from "cache-manager"
 import { AsyncService, InjectSuperJson } from "@modules/mixin"
 import SuperJSON from "superjson"
+import { PrometheusService } from "@modules/prometheus/providers/prometheus.service"
 
 interface SetParams<T> {
-  key: string
-  value: T
-  ttl?: number
-}
-
-interface MSetParams<T> {
-  entries: {
     key: string
     value: T
     ttl?: number
-  }[]
+}
+
+interface MSetParams<T> {
+    entries: {
+        key: string
+        value: T
+        ttl?: number
+    }[]
 }
 
 @Injectable()
 export class CacheService {
     constructor(
-    // Redis = primary cache (persistent)
-    @InjectRedisCache()
-    private readonly redisCacheManager: Cache,
-    // Memory = secondary cache (fast)
-    @InjectMemoryCache()
-    private readonly memoryCacheManager: Cache,
-    private readonly asyncService: AsyncService,
-    @InjectSuperJson()
-    private readonly superjson: SuperJSON,
+        // Redis = primary cache (persistent)
+        @InjectRedisCache()
+        private readonly redisCacheManager: Cache,
+        // Memory = secondary cache (fast)
+        @InjectMemoryCache()
+        private readonly memoryCacheManager: Cache,
+        private readonly asyncService: AsyncService,
+        @InjectSuperJson()
+        private readonly superjson: SuperJSON,
+        @Optional()
+        @Inject(PrometheusService)
+        private readonly prometheusService?: PrometheusService,
     ) {}
 
     /**
-   * Serialize a value into a string using SuperJSON.
-   */
+     * Serialize a value into a string using SuperJSON.
+     */
     private serialize<T>(value: T): string {
-    // superjson.serialize() returns { json, meta }
+        // superjson.serialize() returns { json, meta }
         return this.superjson.stringify(value)
     }
 
     /**
-   * Deserialize a cached string back to its original value.
-   */
+     * Deserialize a cached string back to its original value.
+     */
     private deserialize<T>(value: string): T {
         return this.superjson.parse<T>(value)
     }
 
     /**
-   * Set a single key-value pair in both Redis and memory cache.
-   */
+     * Set a single key-value pair in both Redis and memory cache.
+     */
     public async set<T>({ key, value, ttl }: SetParams<T>): Promise<void> {
         const serialized = this.serialize(value)
         await this.asyncService.allIgnoreError([
@@ -59,39 +63,40 @@ export class CacheService {
     }
 
     /**
-   * Get a single key from cache.
-   * - Memory first (fast)
-   * - Redis fallback
-   * - Rewarm memory if hit in Redis
-   */
+     * Get a single key from cache.
+     * - Memory first (fast)
+     * - Redis fallback
+     * - Rewarm memory if hit in Redis
+     */
     public async get<T>(key: string): Promise<T | null> {
-    // Memory layer
+        // Memory layer
         const memoryRaw = await this.memoryCacheManager.get<string>(key)
         if (memoryRaw != null) {
+            this.prometheusService?.incrementCacheHit()
             return this.deserialize<T>(memoryRaw)
         }
         // Redis layer
         const redisRaw = await this.redisCacheManager.get<string>(key)
         if (redisRaw != null) {
+            this.prometheusService?.incrementCacheHit()
             // Rewarm memory
-            await this.asyncService.allIgnoreError([
-                this.memoryCacheManager.set(key, redisRaw),
-            ])
+            await this.asyncService.allIgnoreError([this.memoryCacheManager.set(key, redisRaw)])
             return this.deserialize<T>(redisRaw)
         }
+        this.prometheusService?.incrementCacheMiss()
         return null
     }
 
     /**
-   * Get multiple keys from cache in parallel.
-   * Memory first, Redis fallback for missing keys.
-   */
+     * Get multiple keys from cache in parallel.
+     * Memory first, Redis fallback for missing keys.
+     */
     public async mget<T>(keys: Array<string>): Promise<Array<T | null>> {
         const results: Array<T | null> = new Array(keys.length).fill(null)
 
         // Step 1: Memory lookup
         const memoryValues = await this.asyncService.allIgnoreError(
-            keys.map(key => this.memoryCacheManager.get<string>(key))
+            keys.map((key) => this.memoryCacheManager.get<string>(key)),
         )
         const missingIndexes: number[] = []
         memoryValues.forEach((val, idx) => {
@@ -104,7 +109,7 @@ export class CacheService {
         // Step 2: Redis lookup for missing
         if (missingIndexes.length > 0) {
             const redisValues = await this.asyncService.allIgnoreError(
-                missingIndexes.map(idx => this.redisCacheManager.get<string>(keys[idx]))
+                missingIndexes.map((idx) => this.redisCacheManager.get<string>(keys[idx])),
             )
 
             await this.asyncService.allIgnoreError(
@@ -114,15 +119,15 @@ export class CacheService {
                         results[idx] = this.deserialize<T>(val)
                         await this.memoryCacheManager.set(keys[idx], val)
                     }
-                })
+                }),
             )
         }
         return results
     }
 
     /**
-   * Set multiple key-value pairs in both Redis and memory cache.
-   */
+     * Set multiple key-value pairs in both Redis and memory cache.
+     */
     public async mset<T>({ entries }: MSetParams<T>): Promise<void> {
         await this.asyncService.allIgnoreError(
             entries.flatMap(({ key, value, ttl }) => {
@@ -131,7 +136,7 @@ export class CacheService {
                     this.redisCacheManager.set(key, serialized, ttl),
                     this.memoryCacheManager.set(key, serialized, ttl),
                 ]
-            })
+            }),
         )
     }
 }
