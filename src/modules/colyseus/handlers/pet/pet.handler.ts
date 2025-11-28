@@ -28,6 +28,8 @@ import { MapSchema } from "@colyseus/schema"
 import { PlayerSyncService } from "../player/player-sync.service"
 import { DEFAULT_PET_PRICE } from "../constants"
 import { TrackGameAction } from "@modules/prometheus/decorators"
+import { InjectGameMongoose, MemdbStorageService, OwnedPetSchema, PetStatus } from "@modules/databases"
+import { Connection, ObjectId } from "mongoose"
 
 /**
  * Pet Handler - Pure business logic layer
@@ -36,11 +38,17 @@ import { TrackGameAction } from "@modules/prometheus/decorators"
 @Injectable()
 export class PetHandler {
     private readonly logger = new Logger(PetHandler.name)
-    constructor(@Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService) {}
+    constructor(
+        @Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService,
+        private readonly memdbStorageService: MemdbStorageService,
+        @InjectGameMongoose()
+        private readonly connection: Connection,
+    ) {}
 
     @TrackGameAction("pet_bought", { labels: ["petType"] })
     async handleBuyPet(payload: BuyPetPayload): Promise<BuyPetResult> {
         try {
+            let newOwnedPet: OwnedPetSchema | null = null
             const player = this.getPlayer(payload.room.state as GameRoomColyseusSchema, payload.sessionId)
             if (!player) {
                 return {
@@ -59,17 +67,43 @@ export class PetHandler {
                     }
                 }
 
-                // Deduct tokens from player in state
-                player.tokens -= DEFAULT_PET_PRICE
+                const pet = this.memdbStorageService.getPets().find((pet) => pet.displayId === payload.petType)
+                if (!pet) {
+                    return {
+                        success: false,
+                        message: "Pet not found",
+                        error: "Pet not found",
+                    }
+                }
 
-                // Sync tokens to DB immediately
+                newOwnedPet = await this.connection.model<OwnedPetSchema>(OwnedPetSchema.name).create({
+                    user: player.walletAddress,
+                    type: pet._id,
+                    name: pet.name,
+                    happiness: pet.defaultHappiness,
+                    hunger: pet.defaultHunger,
+                    cleanliness: pet.defaultCleanliness,
+                    status: PetStatus.Active,
+                })
+                await newOwnedPet.save()
+
+                player.tokens -= pet.costNom
+
                 await this.playerSyncService.syncTokensToDB(player).catch((error) => {
                     this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
                 })
             }
 
-            const petId = `${payload.sessionId}-${Date.now()}`
-            const stateRoom = payload.room as unknown as StateRoom
+            if (!newOwnedPet) {
+                return {
+                    success: false,
+                    message: "Failed to buy pet",
+                    error: "Failed to buy pet",
+                }
+            }
+
+            const petId = (newOwnedPet._id as ObjectId).toString()
+            const stateRoom = payload.room as StateRoom
 
             // Create pet using state management method
             const newPet = stateRoom.createPetState(petId, player.walletAddress || payload.sessionId, payload.petType)

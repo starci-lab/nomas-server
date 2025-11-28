@@ -64,7 +64,7 @@ export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom 
     protected inventoryHandler: InventoryHandler | null = null
     protected playerHandler: PlayerHandler | null = null
 
-    protected initialize() {
+    async initialize() {
         super.initialize()
         this.petHandler = this.app.get(PetHandler, { strict: false })
         this.foodHandler = this.app.get(FoodHandler, { strict: false })

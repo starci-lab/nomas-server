@@ -5,6 +5,7 @@ import { createServer } from "http"
 import { HttpAdapterHost } from "@nestjs/core"
 import { WebSocketTransport } from "@colyseus/ws-transport"
 import { monitor } from "@colyseus/monitor"
+import { playground } from "@colyseus/playground"
 
 export const createColyseusServerProvider = (): Provider<Server> => ({
     provide: COLYSEUS_SERVER,
@@ -13,6 +14,7 @@ export const createColyseusServerProvider = (): Provider<Server> => ({
         const app = httpAdapterHost.httpAdapter.getInstance()
         // Add Colyseus monitor panel
         app.use("/monitor", monitor())
+        app.use("/playground", playground())
 
         const server = new Server({
             server: createServer(app),
