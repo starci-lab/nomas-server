@@ -12,6 +12,7 @@ import { InjectGameMongoose, MemdbStorageService, OwnedPetSchema, UserSchema } f
 import { Connection } from "mongoose"
 import { VerifyMessageInput, VerifyMessageResponseData } from "@modules/graphql/mutations/game/auth/dto"
 import { MutationAuthInvalidSignatureException } from "@exceptions"
+import { createObjectId } from "@utils"
 
 @Injectable()
 export class AuthService {
@@ -71,20 +72,21 @@ export class AuthService {
                  ************************************************************/
                 let user = await this.connection.model<UserSchema>(UserSchema.name).findOne({ accountAddress: address })
                 if (!user) {
+                    const defaultInfo = this.memdbStorageService.getDefaultInfo()
                     /************************************************************
                      * CREATE NEW USER
                      ************************************************************/
                     user = await this.connection
                         .model<UserSchema>(UserSchema.name)
-                        .create({ accountAddress: address, platform })
+                        .create({ accountAddress: address, platform, tokenNom: defaultInfo.tokenNom })
 
                     /************************************************************
                      * CREATE INITIAL PET FOR USER
                      ************************************************************/
-                    const defaultInfo = this.memdbStorageService.getDefaultInfo()
                     await this.connection.model<OwnedPetSchema>(OwnedPetSchema.name).create({
-                        ownerId: user._id,
-                        petType: defaultInfo.defaultPetId,
+                        user: user._id,
+                        type: createObjectId(defaultInfo.defaultPetId),
+                        name: defaultInfo.defaultPetName,
                     })
                 }
 

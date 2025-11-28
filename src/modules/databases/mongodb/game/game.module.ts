@@ -12,8 +12,8 @@ import {
     PoopSchemaClass,
     StoreItemSchema,
     StoreItemSchemaClass,
-    DefaultInfoSchema,
-    DefaultInfoSchemaClass,
+    SystemSchema,
+    SystemSchemaClass,
 } from "./schemas"
 import { Connection } from "mongoose"
 import { envConfig } from "@modules/env"
@@ -105,8 +105,8 @@ export class GameMongooseModule extends ConfigurableModuleClass {
                             useFactory: () => StoreItemSchemaClass,
                         },
                         {
-                            name: DefaultInfoSchema.name,
-                            useFactory: () => DefaultInfoSchemaClass,
+                            name: SystemSchema.name,
+                            useFactory: () => SystemSchemaClass,
                         },
                     ],
                     GAME_MONGOOSE_CONNECTION_NAME,

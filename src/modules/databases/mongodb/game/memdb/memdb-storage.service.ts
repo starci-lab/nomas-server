@@ -1,16 +1,19 @@
 import { Injectable, OnModuleInit } from "@nestjs/common"
 import { InjectGameMongoose } from "../decorators"
 import { Connection } from "mongoose"
-import { DefaultInfoSchema, PetSchema, StoreItemSchema } from "../schemas"
+import { SystemSchema, PetSchema, StoreItemSchema, DefaultInfoSchema } from "../schemas"
 import { RetryService } from "@modules/mixin"
-import { PetId } from "@modules/databases/mongodb/game/enums"
+import { PetId, SystemId } from "@modules/databases/mongodb/game/enums"
 
 @Injectable()
 export class MemdbStorageService implements OnModuleInit {
     // storage variables
     private pets: Array<PetSchema> = []
     private storeItems: Array<StoreItemSchema> = []
-    private defaultInfo: DefaultInfoSchema | null = null
+    private defaultInfo: DefaultInfoSchema = {
+        tokenNom: 10000,
+        defaultPetId: PetId.Chog,
+    }
 
     // constructor
     constructor(
@@ -54,11 +57,14 @@ export class MemdbStorageService implements OnModuleInit {
     private async loadDefaultInfo() {
         await this.retryService.retry({
             action: async () => {
-                this.defaultInfo = await this.connection
-                    .model<DefaultInfoSchema>(DefaultInfoSchema.name)
-                    .find()
-                    .lean<DefaultInfoSchema>()
+                const system = await this.connection
+                    .model<SystemSchema>(SystemSchema.name)
+                    .findOne({ displayId: SystemId.DefaultInfo })
+                    .lean<SystemSchema>()
                     .exec()
+                if (system) {
+                    this.defaultInfo = system.value as DefaultInfoSchema
+                }
             },
             maxRetries: 50,
             delay: 1000,
@@ -74,11 +80,6 @@ export class MemdbStorageService implements OnModuleInit {
     }
 
     public getDefaultInfo(): DefaultInfoSchema {
-        return (
-            this.defaultInfo || {
-                tokenNom: 10000,
-                defaultPetId: PetId.Chog,
-            }
-        )
+        return this.defaultInfo
     }
 }
