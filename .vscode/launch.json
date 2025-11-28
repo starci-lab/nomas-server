@@ -4,17 +4,16 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Run nomas-colyseus",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "node",
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register", "-r", "tsconfig-paths/register"],
-            "args": ["${workspaceFolder}/apps/nomas-colyseus/src/app.ts"],
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env.local",
-            "outFiles": ["${workspaceFolder}/dist/apps/nomas-colyseus/**/*.js"],
+            "name": "Nomas Colyseus Debug",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start:colyseus:debug"],
+            "autoAttachChildProcesses": true,
+            "restart": true,
             "sourceMaps": true,
-            "autoAttachChildProcesses": true
+            "stopOnEntry": false,
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "skipFiles": ["<node_internals>/**"]
         }
     ]
 }

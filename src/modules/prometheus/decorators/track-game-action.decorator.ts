@@ -67,7 +67,7 @@ export function TrackGameAction(actionName: string, options?: TrackGameActionOpt
     if (trackDuration && metricName !== MetricNames.ACTION_DURATION_SECONDS) {
         // We'll need to track both counter and histogram
         // For now, we'll use a wrapper approach
-        return function (target: unknown, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
+        return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
             // Apply counter tracking
             const counterDecorator = TrackMetric({
                 metricName,
