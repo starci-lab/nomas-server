@@ -11,6 +11,13 @@ export enum GamePetEvent {
     Cleaned = "game.pet.cleaned",
     Played = "game.pet.played",
     PoopCreated = "game.pet.poopCreated",
+    BuyResponse = "game.pet.buyResponse",
+    RemoveResponse = "game.pet.removeResponse",
+    FeedResponse = "game.pet.feedResponse",
+    PlayResponse = "game.pet.playResponse",
+    CleanResponse = "game.pet.cleanResponse",
+    CleanedResponse = "game.pet.cleanedResponse",
+    CreatePoopResponse = "game.pet.createPoopResponse",
 }
 
 export enum GameFoodEvent {
@@ -39,4 +46,11 @@ export enum GamePlayerEvent {
     ClaimDailyRewardRequested = "game.player.claimDailyRewardRequested",
     UpdateSettingsRequested = "game.player.updateSettingsRequested",
     UpdateTutorialRequested = "game.player.updateTutorialRequested",
+    GetGameConfigResponse = "game.player.getGameConfigResponse",
+    GetPlayerStateResponse = "game.player.getPlayerStateResponse",
+    GetProfileResponse = "game.player.getProfileResponse",
+    GetPetsStateResponse = "game.player.getPetsStateResponse",
+    ClaimDailyRewardResponse = "game.player.claimDailyRewardResponse",
+    UpdateSettingsResponse = "game.player.updateSettingsResponse",
+    UpdateTutorialResponse = "game.player.updateTutorialResponse",
 }

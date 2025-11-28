@@ -3,6 +3,9 @@ import { ConfigurableModuleClass } from "./handlers.module-definition"
 import { MixinModule } from "@modules/mixin"
 import { createColyseusServerProvider } from "@modules/colyseus/colyseus.providers"
 import { ColyseusService } from "@modules/colyseus/colyseus.service"
+import { PetHandler } from "@modules/colyseus/handlers/pet"
+import { FoodHandler } from "@modules/colyseus/handlers/food"
+import { InventoryHandler } from "@modules/colyseus/handlers/inventory"
 
 @Module({
     imports: [
@@ -22,6 +25,9 @@ export class HandlersModule extends ConfigurableModuleClass {
         const providers: Array<Provider> = []
         providers.push(createColyseusServerProvider())
         providers.push(ColyseusService)
+        providers.push(PetHandler)
+        providers.push(FoodHandler)
+        providers.push(InventoryHandler)
         return {
             ...dynamicModule,
             providers: [...(dynamicModule.providers || []), ...providers],

@@ -10,7 +10,7 @@ import { envConfig } from "@modules/env"
 import { AuthService as BlockchainAuthService } from "@modules/blockchain"
 import { InjectGameMongoose, MemdbStorageService, OwnedPetSchema, UserSchema } from "@modules/databases"
 import { Connection } from "mongoose"
-import { VerifyMessageInput, VerifyMessageResponseData } from "@modules/graphql/mutations/game/auth/dto"
+import { VerifyMessageInput, VerifyMessageResponseData } from "../auth/dto"
 import { MutationAuthInvalidSignatureException } from "@exceptions"
 import { createObjectId } from "@utils"
 
