@@ -19,13 +19,13 @@ export class SessionSchema extends AbstractSchema {
         description: "The hash of the session",
     })
     @Prop({ type: String, required: true, unique: true })
-    hash!: string
+        hash!: string
 
     @Field(() => ID, {
         description: "The user associated with this session",
     })
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: UserSchema.name })
-    user!: UserSchema | Types.ObjectId
+        user!: UserSchema | Types.ObjectId
 }
 
 export const SessionSchemaClass = SchemaFactory.createForClass(SessionSchema)

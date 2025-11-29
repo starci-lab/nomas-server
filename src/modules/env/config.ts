@@ -34,6 +34,14 @@ export const envConfig = () => ({
             ttl: process.env.REDIS_CACHE_TTL ? Number.parseInt(process.env.REDIS_CACHE_TTL) : 60 * 60 * 24, // 24 hours
         },
     },
+    bullmq: {
+        completedJobCount: process.env.BULLMQ_COMPLETED_JOB_COUNT
+            ? Number.parseInt(process.env.BULLMQ_COMPLETED_JOB_COUNT)
+            : 1000,
+        failedJobCount: process.env.BULLMQ_FAILED_JOB_COUNT
+            ? Number.parseInt(process.env.BULLMQ_FAILED_JOB_COUNT)
+            : 1000,
+    },
     secret: {
         jwt: process.env.JWT_SECRET || "secret",
         refreshTokenExpiration: process.env.JWT_REFRESH_TOKEN_EXPIRATION || "30d",
