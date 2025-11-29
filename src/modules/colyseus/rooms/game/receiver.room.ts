@@ -12,7 +12,6 @@ import {
     ReceiveUpdateSettingsPayload,
     ReceiveUpdateTutorialPayload,
 } from "@modules/colyseus/events"
-import { AbstractPetStateGameRoom } from "./state-pet.room"
 import { Client } from "colyseus"
 import { GamePetEvent, GameFoodEvent, GameInventoryEvent, GamePlayerEvent } from "@modules/colyseus/events"
 import { BuyPetPayload, BuyPetResponsePayload } from "@modules/colyseus/handlers/pet/types"
@@ -53,12 +52,13 @@ import {
 } from "@modules/colyseus/handlers/player/types"
 import { PlayerHandler } from "@modules/colyseus/handlers/player"
 import type { GameRoom } from "../game"
+import { AbstractStateManagementGameRoom } from "@modules/colyseus/rooms/game/state-management.room"
 
 export interface RegisterHandler {
     messageType: GameActionReceiveMessage
     handler: (client: Client, data: unknown) => void | Promise<void>
 }
-export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom {
+export abstract class AbstractReceiverGameRoom extends AbstractStateManagementGameRoom {
     protected petHandler: PetHandler | null = null
     protected foodHandler: FoodHandler | null = null
     protected inventoryHandler: InventoryHandler | null = null

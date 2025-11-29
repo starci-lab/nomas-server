@@ -3,6 +3,7 @@ import { INestApplication, Logger } from "@nestjs/common"
 import { EventEmitter2 } from "@nestjs/event-emitter"
 import { DayjsService, RetryService } from "@modules/mixin"
 import { ROOM_EVENT_LISTENER_METADATA_KEY, RoomEventListenerMetadata } from "../decorators"
+import { JwtEphemeralService } from "@modules/jwt"
 
 /**
  * Base class For Colyseus Room with support for decorator-based message handling
@@ -14,6 +15,7 @@ export abstract class BaseRoom<T extends object = object> extends Room<T> {
     protected eventEmitter: EventEmitter2
     protected retryService: RetryService | null = null
     protected dayjsService: DayjsService
+    protected jwtService: JwtEphemeralService | null = null
 
     constructor() {
         super()
@@ -28,6 +30,7 @@ export abstract class BaseRoom<T extends object = object> extends Room<T> {
         this.eventEmitter = this.app.get(EventEmitter2, { strict: false })
         this.dayjsService = this.app.get(DayjsService, { strict: false })
         this.retryService = this.app.get(RetryService, { strict: false })
+        this.jwtService = this.app.get(JwtEphemeralService, { strict: false })
 
         // Automatically register event listeners marked with @OnRoomEvent decorator
         this.registerRoomEventListeners()
