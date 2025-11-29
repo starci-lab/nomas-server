@@ -1,5 +1,5 @@
 import { Query, Resolver } from "@nestjs/graphql"
-import { UseInterceptors } from "@nestjs/common"
+import { UseGuards, UseInterceptors } from "@nestjs/common"
 import { StaticService } from "./static.service"
 import { GraphQLSuccessMessage } from "../../../interceptors"
 import { UseThrottler, ThrottlerConfig } from "@modules/throttler"
@@ -7,6 +7,7 @@ import { PetSchema, StoreItemSchema } from "@modules/databases"
 import { GraphQLTransformInterceptor } from "../../../interceptors"
 import { PetsResponse, StoreItemsResponse } from "./static.dto"
 import { TrackGraphQL } from "@modules/prometheus/decorators"
+import { GraphQLJwtGuard } from "@modules/passport"
 
 /**
  * Handles static read-only data used by the game.
@@ -29,6 +30,7 @@ export class StaticResolver {
         name: "gamePets",
         description: "Return a full list of supported pet species, including their base stats and income properties.",
     })
+    @UseGuards(GraphQLJwtGuard)
     @TrackGraphQL({ operationType: "query" })
     async pets(): Promise<Array<PetSchema>> {
         return this.staticService.pets()
@@ -40,6 +42,7 @@ export class StaticResolver {
         name: "gameStoreItems",
         description: "Return all store items available for purchase, including cost, rarity, and category metadata.",
     })
+    @UseGuards(GraphQLJwtGuard)
     @TrackGraphQL({ operationType: "query" })
     async storeItems(): Promise<Array<StoreItemSchema>> {
         const result = this.staticService.storeItems()

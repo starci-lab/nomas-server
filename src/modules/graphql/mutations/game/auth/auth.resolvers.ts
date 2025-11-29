@@ -12,7 +12,7 @@ import { ThrottlerConfig, UseThrottler } from "@modules/throttler"
 import { GraphQLSuccessMessage } from "../../../interceptors"
 import { GraphQLTransformInterceptor } from "../../../interceptors"
 import { UseGuards, UseInterceptors } from "@nestjs/common"
-import { GraphQLSignatureGuard } from "@modules/passport"
+import { GraphQLSignatureGuard } from "@modules/passport/guards"
 import {
     VerifyMessageInput,
     VerifyMessageResponse,

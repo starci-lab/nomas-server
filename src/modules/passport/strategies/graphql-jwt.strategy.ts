@@ -4,7 +4,7 @@ import { envConfig } from "@modules/env"
 import { Request } from "express"
 import { ExtractJwt, Strategy } from "passport-jwt"
 import { SignatureInvalidException } from "@exceptions"
-import { AuthService } from "@modules/graphql/mutations/game/auth/auth.service"
+import { AuthService } from "@modules/graphql/mutations"
 
 @Injectable()
 export class GraphQLJwtStrategy extends PassportStrategy(Strategy) {

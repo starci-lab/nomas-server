@@ -1,10 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import {
     RequestColyseusEphemeralJwtResponseData,
     RequestSignatureInput,
     RequestSignatureResponseData,
 } from "./auth.dto"
-import { JwtEphemeralService, JwtPayloadType } from "@modules/passport"
+import { JwtEphemeralService, JwtPayloadType } from "@modules/jwt"
 import { NonceService } from "@modules/blockchain"
 import { envConfig } from "@modules/env"
 import { AuthService as BlockchainAuthService } from "@modules/blockchain"
@@ -21,6 +21,7 @@ import { CacheKey, CacheService, createCacheKey } from "@modules/cache"
 export class AuthService {
     private readonly logger = new Logger(AuthService.name)
     constructor(
+        @Inject(forwardRef(() => JwtEphemeralService))
         private readonly jwtEphemeralService: JwtEphemeralService,
         private readonly nonceService: NonceService,
         private readonly blockchainAuthService: BlockchainAuthService,

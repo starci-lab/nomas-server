@@ -15,6 +15,7 @@ import { AppService } from "@apps/nomas-server/src/app.service"
 import { TestController } from "./test.controller"
 import { PrometheusModule } from "@modules/prometheus/prometheus.module"
 import { CacheModule } from "@modules/cache"
+import { JwtModule } from "@modules/jwt"
 
 @Module({
     imports: [
@@ -54,6 +55,9 @@ import { CacheModule } from "@modules/cache"
             plugins: {
                 json: false,
             },
+            isGlobal: true,
+        }),
+        JwtModule.register({
             isGlobal: true,
         }),
         WinstonModule.register({
