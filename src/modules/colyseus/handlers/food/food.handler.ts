@@ -28,9 +28,7 @@ import { TrackGameAction } from "@modules/prometheus/decorators"
 @Injectable()
 export class FoodHandler {
     private readonly logger = new Logger(FoodHandler.name)
-    constructor(
-        @Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService,
-    ) {}
+    constructor(@Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService) {}
 
     // Get food items configuration
     private getFoodItems(): FoodItems {
@@ -53,7 +51,7 @@ export class FoodHandler {
         return foodType in foodItems
     }
 
-    @TrackGameAction("food_purchased", { labels: ["itemType"], trackDuration: true })
+    @TrackGameAction("food_purchased", { labels: ["food_type"], trackDuration: true })
     async handlePurchaseFood(payload: PurchaseFoodPayload): Promise<PurchaseFoodResult> {
         this.logger.debug(`Handling purchase food: ${payload.itemType}`)
         try {
@@ -390,4 +388,3 @@ export class FoodHandler {
         return summary
     }
 }
-

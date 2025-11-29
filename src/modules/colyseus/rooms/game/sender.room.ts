@@ -25,7 +25,7 @@ import {
 } from "../../events"
 import { AbstractReceiverGameRoom } from "./receiver.room"
 import { PlayerColyseusSchema, PetColyseusSchema } from "../../schemas"
-import { OnEvent } from "@nestjs/event-emitter"
+import { OnRoomEvent } from "../../decorators"
 import { GameInventoryEvent, GameFoodEvent, GamePetEvent, GamePlayerEvent } from "@modules/colyseus/events"
 import {
     PurchaseInventoryItemResponsePayload,
@@ -162,7 +162,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     // - This class: Listens response events → converts to send payloads → sends to client
     // ============================================================================
 
-    @OnEvent(GameInventoryEvent.PurchaseItemResponse)
+    @OnRoomEvent(GameInventoryEvent.PurchaseItemResponse)
     onPurchaseItemResponse(payload: PurchaseInventoryItemResponsePayload) {
         const sendPayload: SendPurchaseResponsePayload = {
             success: payload.result.success,
@@ -174,7 +174,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendPurchaseResponse(payload.client, sendPayload)
     }
 
-    @OnEvent(GameInventoryEvent.GetInventoryResponse)
+    @OnRoomEvent(GameInventoryEvent.GetInventoryResponse)
     onGetInventoryResponse(payload: GetInventoryResponsePayload) {
         const sendPayload: SendInventoryResponsePayload = {
             success: payload.result.success,
@@ -187,7 +187,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendInventoryResponse(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.PurchaseResponse)
+    @OnRoomEvent(GameFoodEvent.PurchaseResponse)
     onPurchaseFoodResponse(payload: PurchaseFoodResponsePayload) {
         const sendPayload: SendPurchaseResponsePayload = {
             success: payload.result.success,
@@ -199,7 +199,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendPurchaseResponse(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.GetCatalogResponse)
+    @OnRoomEvent(GameFoodEvent.GetCatalogResponse)
     onGetCatalogResponse(payload: GetCatalogResponsePayload) {
         const sendPayload: SendStoreCatalogPayload = {
             success: payload.result.success,
@@ -211,7 +211,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendStoreCatalog(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.GetInventoryResponse)
+    @OnRoomEvent(GameFoodEvent.GetInventoryResponse)
     onGetFoodInventoryResponse(payload: GetFoodInventoryResponsePayload) {
         const sendPayload: SendFoodInventoryPayload = {
             success: payload.result.success,
@@ -223,7 +223,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendFoodInventory(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.FeedPetResponse)
+    @OnRoomEvent(GameFoodEvent.FeedPetResponse)
     onFeedPetResponse(payload: FeedPetWithFoodResponsePayload) {
         const sendPayload: SendFeedResultPayload = {
             success: payload.result.success,
@@ -236,7 +236,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     }
 
     // Pet response event handlers
-    @OnEvent(GamePetEvent.BuyResponse)
+    @OnRoomEvent(GamePetEvent.BuyResponse)
     onBuyPetResponse(payload: BuyPetResponsePayload) {
         this.sendBuyPetResponse(payload.client, {
             success: payload.result.success,
@@ -250,7 +250,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnEvent(GamePetEvent.RemoveResponse)
+    @OnRoomEvent(GamePetEvent.RemoveResponse)
     onRemovePetResponse(payload: RemovePetResponsePayload) {
         this.sendRemovePetResponse(payload.client, {
             success: payload.result.success,
@@ -264,7 +264,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnEvent(GamePetEvent.FeedResponse)
+    @OnRoomEvent(GamePetEvent.FeedResponse)
     onPetFeedResponse(payload: FeedPetResponsePayload) {
         this.sendActionResponse(payload.client, {
             success: payload.result.success,
@@ -278,7 +278,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnEvent(GamePetEvent.PlayResponse)
+    @OnRoomEvent(GamePetEvent.PlayResponse)
     onPlayPetResponse(payload: PlayPetResponsePayload) {
         this.sendActionResponse(payload.client, {
             success: payload.result.success,
@@ -292,7 +292,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnEvent(GamePetEvent.CleanResponse)
+    @OnRoomEvent(GamePetEvent.CleanResponse)
     onCleanPetResponse(payload: CleanPetResponsePayload) {
         this.sendActionResponse(payload.client, {
             success: payload.result.success,
@@ -306,7 +306,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnEvent(GamePetEvent.CleanedResponse)
+    @OnRoomEvent(GamePetEvent.CleanedResponse)
     onCleanedPetResponse(payload: CleanedPetResponsePayload) {
         this.sendCleanedPetResponse(payload.client, {
             success: payload.result.success,
@@ -320,7 +320,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnEvent(GamePetEvent.CreatePoopResponse)
+    @OnRoomEvent(GamePetEvent.CreatePoopResponse)
     onCreatePoopResponse(payload: CreatePoopResponsePayload) {
         this.sendCreatePoopResponse(payload.client, {
             success: payload.result.success,
@@ -335,7 +335,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     }
 
     // Player response event handlers
-    @OnEvent(GamePlayerEvent.GetGameConfigResponse)
+    @OnRoomEvent(GamePlayerEvent.GetGameConfigResponse)
     onGetGameConfigResponse(payload: GetGameConfigResponsePayload) {
         this.sendGameConfigResponse(payload.client, {
             success: payload.result.success,
@@ -346,7 +346,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         })
     }
 
-    @OnEvent(GamePlayerEvent.GetPlayerStateResponse)
+    @OnRoomEvent(GamePlayerEvent.GetPlayerStateResponse)
     onGetPlayerStateResponse(payload: GetPlayerStateResponsePayload) {
         this.sendPlayerStateResponse(payload.client, {
             success: payload.result.success,
@@ -357,7 +357,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         })
     }
 
-    @OnEvent(GamePlayerEvent.GetProfileResponse)
+    @OnRoomEvent(GamePlayerEvent.GetProfileResponse)
     onGetProfileResponse(payload: GetProfileResponsePayload) {
         this.sendProfileResponse(payload.client, {
             success: payload.result.success,
@@ -368,7 +368,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         })
     }
 
-    @OnEvent(GamePlayerEvent.GetPetsStateResponse)
+    @OnRoomEvent(GamePlayerEvent.GetPetsStateResponse)
     onGetPetsStateResponse(payload: GetPetsStateResponsePayload) {
         this.sendPetsStateResponse(payload.client, {
             success: payload.result.success,
@@ -379,7 +379,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         })
     }
 
-    @OnEvent(GamePlayerEvent.ClaimDailyRewardResponse)
+    @OnRoomEvent(GamePlayerEvent.ClaimDailyRewardResponse)
     onClaimDailyRewardResponse(payload: ClaimDailyRewardResponsePayload) {
         this.sendDailyRewardResponse(payload.client, {
             success: payload.result.success,
@@ -390,7 +390,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         })
     }
 
-    @OnEvent(GamePlayerEvent.UpdateSettingsResponse)
+    @OnRoomEvent(GamePlayerEvent.UpdateSettingsResponse)
     onUpdateSettingsResponse(payload: UpdateSettingsResponsePayload) {
         this.sendSettingsResponse(payload.client, {
             success: payload.result.success,
@@ -401,7 +401,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         })
     }
 
-    @OnEvent(GamePlayerEvent.UpdateTutorialResponse)
+    @OnRoomEvent(GamePlayerEvent.UpdateTutorialResponse)
     onUpdateTutorialResponse(payload: UpdateTutorialResponsePayload) {
         this.sendTutorialResponse(payload.client, {
             success: payload.result.success,

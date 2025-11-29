@@ -2,6 +2,7 @@ import { Room } from "colyseus"
 import { INestApplication, Logger } from "@nestjs/common"
 import { EventEmitter2 } from "@nestjs/event-emitter"
 import { DayjsService, RetryService } from "@modules/mixin"
+import { ROOM_EVENT_LISTENER_METADATA_KEY, RoomEventListenerMetadata } from "../decorators"
 
 /**
  * Base class For Colyseus Room with support for decorator-based message handling
@@ -27,5 +28,24 @@ export abstract class BaseRoom<T extends object = object> extends Room<T> {
         this.eventEmitter = this.app.get(EventEmitter2, { strict: false })
         this.dayjsService = this.app.get(DayjsService, { strict: false })
         this.retryService = this.app.get(RetryService, { strict: false })
+
+        // Automatically register event listeners marked with @OnRoomEvent decorator
+        this.registerRoomEventListeners()
+    }
+
+    /**
+     * Automatically register all methods marked with @OnRoomEvent decorator
+     */
+    private registerRoomEventListeners() {
+        const listeners: Array<RoomEventListenerMetadata> =
+            Reflect.getMetadata(ROOM_EVENT_LISTENER_METADATA_KEY, this.constructor) || []
+
+        listeners.forEach((listener) => {
+            const method = this[listener.methodName as keyof this]
+            if (typeof method === "function") {
+                this.eventEmitter.on(listener.eventName, method.bind(this))
+                this.logger.debug(`Registered event listener: ${listener.eventName} -> ${String(listener.methodName)}`)
+            }
+        })
     }
 }

@@ -23,7 +23,7 @@ export class InventoryHandler {
         private readonly memdbStorageService: MemdbStorageService,
     ) {}
 
-    @TrackGameAction("item_purchased", { labels: ["itemType", "itemId"], trackDuration: true })
+    @TrackGameAction("item_purchased", { labels: ["item_type"], trackDuration: true })
     async handlePurchaseItem(payload: PurchaseInventoryItemPayload): Promise<PurchaseInventoryItemResult> {
         this.logger.debug(`Handling purchase item: ${payload.itemId}`)
         try {
@@ -208,4 +208,3 @@ export class InventoryHandler {
         return summary
     }
 }
-
