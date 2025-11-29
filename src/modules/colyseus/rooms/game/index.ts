@@ -6,9 +6,26 @@ import { AbstractSenderGameRoom } from "./sender.room"
 import { GAME_ROOM_MAX_CLIENTS } from "./constanst"
 import { GAME_ROOM_RECONNECTION_TIME } from "./constanst"
 import { PrometheusService } from "@modules/prometheus/providers/prometheus.service"
+import { JwtEphemeralService } from "@modules/jwt"
 
 export class GameRoom extends AbstractSenderGameRoom {
     maxClients = GAME_ROOM_MAX_CLIENTS
+    private static jwtService: JwtEphemeralService | null = null
+
+    // Getter method to lazy initialize
+    private static getJwtService(): JwtEphemeralService {
+        if (!GameRoom.jwtService) {
+            const app = globalThis.__APP__
+            if (!app) {
+                throw new Error("NestJS application not available")
+            }
+            GameRoom.jwtService = app.get(JwtEphemeralService, { strict: false })
+            if (!GameRoom.jwtService) {
+                throw new Error("JwtEphemeralService not available")
+            }
+        }
+        return GameRoom.jwtService
+    }
 
     async onCreate(options: GameRoomOptions) {
         // initialize nestjs dependencies
@@ -29,8 +46,15 @@ export class GameRoom extends AbstractSenderGameRoom {
                 prometheusService.incrementRoomCreated()
             }
         } catch (error) {
+            this.logger.error("Error room creation metrics", error)
             // Prometheus service not available, continue without tracking
         }
+    }
+
+    static async onAuth(token: string) {
+        const jwtService = this.getJwtService()
+        const payload = await jwtService.verifyToken(token)
+        return payload
     }
 
     async onJoin(client: Client, options: GameRoomOptions) {
@@ -57,7 +81,7 @@ export class GameRoom extends AbstractSenderGameRoom {
                 prometheusService.setRoomMaxCapacityUsage(capacityUsage)
             }
         } catch (error) {
-            // Prometheus service not available, continue without tracking
+            this.logger.debug("Error player join metrics", error)
         }
     }
 
@@ -82,6 +106,7 @@ export class GameRoom extends AbstractSenderGameRoom {
                 prometheusService.setRoomMaxCapacityUsage(capacityUsage)
             }
         } catch (error) {
+            this.logger.debug("Error player leave metrics", error)
             // Prometheus service not available, continue without tracking
         }
     }
@@ -96,6 +121,7 @@ export class GameRoom extends AbstractSenderGameRoom {
                 prometheusService.incrementRoomDisposed()
             }
         } catch (error) {
+            this.logger.debug("Error room disposal metrics", error)
             // Prometheus service not available, continue without tracking
         }
     }
