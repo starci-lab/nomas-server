@@ -2,7 +2,6 @@ import { Injectable, Logger } from "@nestjs/common"
 import { JwtService as NestJwtService } from "@nestjs/jwt"
 import { envConfig } from "@modules/env"
 import ms, { StringValue } from "ms"
-import { v4 } from "uuid"
 import { DayjsService } from "@modules/mixin"
 import { Platform } from "@typedefs"
 
@@ -14,6 +13,8 @@ export interface GenerateAuthCredentialsPayload {
     userId: string
     platform: Platform
     userAddress: string
+    sessionId: string
+    hash: string
 }
 
 @Injectable()
@@ -39,11 +40,36 @@ export class JwtEphemeralService {
 
     public async generateAuthCredentials(payload: GenerateAuthCredentialsPayload) {
         const [accessToken, refreshToken] = await Promise.all([
-            this.jwtService.signAsync(payload, {
-                secret: envConfig().secret.jwt,
-                expiresIn: envConfig().secret.accessTokenExpiration as StringValue,
-            }),
-            v4(),
+            /************************************************************
+             * GENERATE ACCESS TOKEN
+             * the payload is the session ID and user ID
+             * we will check if the session ID and user ID are valid in the database
+             ************************************************************/
+            this.jwtService.signAsync(
+                {
+                    sessionId: payload.sessionId,
+                    userId: payload.userId,
+                },
+                {
+                    secret: envConfig().secret.jwt,
+                    expiresIn: envConfig().secret.accessTokenExpiration as StringValue,
+                },
+            ),
+            /************************************************************
+             * GENERATE REFRESH TOKEN
+             * the payload is the session hash
+             * we will check if the session hash is valid in the database
+             ************************************************************/
+            this.jwtService.signAsync(
+                {
+                    sessionId: payload.sessionId,
+                    hash: payload.hash,
+                },
+                {
+                    secret: envConfig().secret.jwt,
+                    expiresIn: envConfig().secret.refreshTokenExpiration as StringValue,
+                },
+            ),
         ])
         return {
             accessToken,

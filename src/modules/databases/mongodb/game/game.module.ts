@@ -14,6 +14,8 @@ import {
     StoreItemSchemaClass,
     SystemSchema,
     SystemSchemaClass,
+    SessionSchema,
+    SessionSchemaClass,
 } from "./schemas"
 import { Connection } from "mongoose"
 import { envConfig } from "@modules/env"
@@ -107,6 +109,10 @@ export class GameMongooseModule extends ConfigurableModuleClass {
                         {
                             name: SystemSchema.name,
                             useFactory: () => SystemSchemaClass,
+                        },
+                        {
+                            name: SessionSchema.name,
+                            useFactory: () => SessionSchemaClass,
                         },
                     ],
                     GAME_MONGOOSE_CONNECTION_NAME,

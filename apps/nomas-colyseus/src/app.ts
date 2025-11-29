@@ -14,10 +14,14 @@ import { WinstonLevel, WinstonLogType, WinstonModule } from "@winston"
 import { AppService } from "@apps/nomas-server/src/app.service"
 import { TestController } from "./test.controller"
 import { PrometheusModule } from "@modules/prometheus/prometheus.module"
+import { CacheModule } from "@modules/cache"
 
 @Module({
     imports: [
         EnvModule.forRoot({
+            isGlobal: true,
+        }),
+        CacheModule.register({
             isGlobal: true,
         }),
         ThrottlerModule.register({
