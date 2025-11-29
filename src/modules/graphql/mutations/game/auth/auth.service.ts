@@ -1,29 +1,34 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import {
     RequestColyseusEphemeralJwtResponseData,
     RequestSignatureInput,
     RequestSignatureResponseData,
 } from "./auth.dto"
-import { JwtEphemeralService } from "@modules/passport"
+import { JwtEphemeralService, JwtPayloadType } from "@modules/jwt"
 import { NonceService } from "@modules/blockchain"
 import { envConfig } from "@modules/env"
 import { AuthService as BlockchainAuthService } from "@modules/blockchain"
-import { InjectGameMongoose, MemdbStorageService, OwnedPetSchema, UserSchema } from "@modules/databases"
+import { InjectGameMongoose, MemdbStorageService, OwnedPetSchema, SessionSchema, UserSchema } from "@modules/databases"
 import { Connection } from "mongoose"
 import { VerifyMessageInput, VerifyMessageResponseData } from "../auth/dto"
-import { MutationAuthInvalidSignatureException } from "@exceptions"
+import { GraphQLAuthSessionInvalidException, MutationAuthInvalidSignatureException } from "@exceptions"
 import { createObjectId } from "@utils"
+import crypto from "crypto"
+import { randomStringGenerator } from "@nestjs/common/utils/random-string-generator.util"
+import { CacheKey, CacheService, createCacheKey } from "@modules/cache"
 
 @Injectable()
 export class AuthService {
     private readonly logger = new Logger(AuthService.name)
     constructor(
+        @Inject(forwardRef(() => JwtEphemeralService))
         private readonly jwtEphemeralService: JwtEphemeralService,
         private readonly nonceService: NonceService,
         private readonly blockchainAuthService: BlockchainAuthService,
         @InjectGameMongoose()
         private readonly connection: Connection,
         private readonly memdbStorageService: MemdbStorageService,
+        private readonly cacheService: CacheService,
     ) {}
 
     async requestColyseusEphemeralJwt(): Promise<RequestColyseusEphemeralJwtResponseData> {
@@ -93,6 +98,12 @@ export class AuthService {
                 /************************************************************
                  * GENERATE AUTH TOKENS
                  ************************************************************/
+                const hash = crypto.createHash("sha256").update(randomStringGenerator()).digest("hex")
+                const session = await this.connection.model<SessionSchema>(SessionSchema.name).create({
+                    user: user.id,
+                    hash,
+                })
+
                 const {
                     accessToken,
                     refreshToken: { token, expiredAt },
@@ -100,6 +111,8 @@ export class AuthService {
                     userId: user.id,
                     platform: user.platform,
                     userAddress: user.accountAddress,
+                    sessionId: session.id,
+                    hash,
                 })
 
                 const response: VerifyMessageResponseData = {
@@ -118,6 +131,29 @@ export class AuthService {
             throw error
         } finally {
             await mongoSession.endSession()
+        }
+    }
+
+    async verifyAccessToken(accessToken: string) {
+        const payload: JwtPayloadType = await this.jwtEphemeralService.verifyToken(accessToken)
+
+        // Force logout if the session is in the blacklist
+        const isSessionBlacklisted = await this.cacheService.get<boolean>(
+            createCacheKey(CacheKey.SessionBlacklist, payload.sessionId),
+        )
+
+        if (isSessionBlacklisted) {
+            throw new GraphQLAuthSessionInvalidException("Session is blacklisted")
+        }
+
+        return payload
+    }
+
+    async verifyRefreshToken(refreshToken: string) {
+        try {
+            return await this.jwtEphemeralService.verifyToken(refreshToken)
+        } catch {
+            throw new GraphQLAuthSessionInvalidException("Refresh token is invalid")
         }
     }
 }
