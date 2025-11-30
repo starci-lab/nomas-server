@@ -41,6 +41,9 @@ jobs:
                   JWT_ACCESS_TOKEN_EXPIRATION: ${{ vars.JWT_ACCESS_TOKEN_EXPIRATION }}
                   SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
                   LOKI_HOST: ${{ vars.LOKI_HOST }}
+                  REDIS_COLYSEUS_HOST: ${{ vars.REDIS_COLYSEUS_HOST }}
+                  REDIS_THROTTLER_HOST: ${{ vars.REDIS_THROTTLER_HOST }}
+                  REDIS_CACHE_HOST: ${{ vars.REDIS_CACHE_HOST }}
 
                   # ====== Sensitive config (Secrets) ======
                   MONGODB_GAME_USERNAME: ${{ secrets.MONGODB_GAME_USERNAME }}
