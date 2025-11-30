@@ -7,140 +7,38 @@ services:
             dockerfile: apps/nomas-colyseus/Dockerfile
         container_name: nomas-colyseus
         ports:
-            - "${PORT:-3000}:3000"
-            - "${COLYSEUS_PORT:-2567}:2567"
+            - "${PORT}:${PORT}"
+            - "${COLYSEUS_PORT}:${COLYSEUS_PORT}"
         environment:
-            - NODE_ENV=production
-            - PORT=${PORT:-3000}
-            - COLYSEUS_PORT=${COLYSEUS_PORT:-2567}
-            - MONGODB_GAME_HOST=mongodb
-            - MONGODB_GAME_PORT=27017
-            - MONGODB_GAME_DATABASE=${MONGODB_GAME_DATABASE:-game}
-            - MONGODB_GAME_USERNAME=${MONGODB_GAME_USERNAME:-root}
+            - NODE_ENV=${NODE_ENV}
+            - PORT=${PORT}
+            - COLYSEUS_PORT=${COLYSEUS_PORT}
+            - MONGODB_GAME_HOST=${MONGODB_GAME_HOST}
+            - MONGODB_GAME_PORT=${MONGODB_GAME_PORT}
+            - MONGODB_GAME_DATABASE=${MONGODB_GAME_DATABASE}
+            - MONGODB_GAME_USERNAME=${MONGODB_GAME_USERNAME}
             - MONGODB_GAME_PASSWORD=${MONGODB_GAME_PASSWORD}
-            - REDIS_COLYSEUS_HOST=redis-colyseus
-            - REDIS_COLYSEUS_PORT=6379
-            - REDIS_COLYSEUS_USERNAME=${REDIS_COLYSEUS_USERNAME:-default}
+            - REDIS_COLYSEUS_HOST=${REDIS_COLYSEUS_HOST}
+            - REDIS_COLYSEUS_PORT=${REDIS_COLYSEUS_PORT}
+            - REDIS_COLYSEUS_USERNAME=${REDIS_COLYSEUS_USERNAME}
             - REDIS_COLYSEUS_PASSWORD=${REDIS_COLYSEUS_PASSWORD}
-            - REDIS_COLYSEUS_REQUIRE_PASSWORD=${REDIS_COLYSEUS_REQUIRE_PASSWORD:-true}
-            - REDIS_THROTTLER_HOST=redis-throttler
-            - REDIS_THROTTLER_PORT=6379
-            - REDIS_THROTTLER_USERNAME=${REDIS_THROTTLER_USERNAME:-default}
+            - REDIS_COLYSEUS_REQUIRE_PASSWORD=${REDIS_COLYSEUS_REQUIRE_PASSWORD}
+            - REDIS_THROTTLER_HOST=${REDIS_THROTTLER_HOST}
+            - REDIS_THROTTLER_PORT=${REDIS_THROTTLER_PORT}
+            - REDIS_THROTTLER_USERNAME=${REDIS_THROTTLER_USERNAME}
             - REDIS_THROTTLER_PASSWORD=${REDIS_THROTTLER_PASSWORD}
-            - REDIS_THROTTLER_REQUIRE_PASSWORD=${REDIS_THROTTLER_REQUIRE_PASSWORD:-true}
-            - REDIS_CACHE_HOST=redis-cache
-            - REDIS_CACHE_PORT=6379
-            - REDIS_CACHE_USERNAME=${REDIS_CACHE_USERNAME:-default}
+            - REDIS_THROTTLER_REQUIRE_PASSWORD=${REDIS_THROTTLER_REQUIRE_PASSWORD}
+            - REDIS_CACHE_HOST=${REDIS_CACHE_HOST}
+            - REDIS_CACHE_PORT=${REDIS_CACHE_PORT}
+            - REDIS_CACHE_USERNAME=${REDIS_CACHE_USERNAME}
             - REDIS_CACHE_PASSWORD=${REDIS_CACHE_PASSWORD}
-            - REDIS_CACHE_REQUIRE_PASSWORD=${REDIS_CACHE_REQUIRE_PASSWORD:-true}
+            - REDIS_CACHE_REQUIRE_PASSWORD=${REDIS_CACHE_REQUIRE_PASSWORD}
             - JWT_SECRET=${JWT_SECRET}
-            - JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_TOKEN_EXPIRATION:-30d}
-            - JWT_ACCESS_TOKEN_EXPIRATION=${JWT_ACCESS_TOKEN_EXPIRATION:-15d}
+            - JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_TOKEN_EXPIRATION}
+            - JWT_ACCESS_TOKEN_EXPIRATION=${JWT_ACCESS_TOKEN_EXPIRATION}
             - SENTRY_DSN=${SENTRY_DSN}
-            - SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE:-1.0}
-            - LOKI_HOST=${LOKI_HOST:-http://localhost:3100}
-            - LOKI_USERNAME=${LOKI_USERNAME:-admin}
-            - LOKI_PASSWORD=${LOKI_PASSWORD:-admin}
-        depends_on:
-            mongodb:
-                condition: service_healthy
-            redis-colyseus:
-                condition: service_healthy
-            redis-throttler:
-                condition: service_healthy
-            redis-cache:
-                condition: service_healthy
+            - SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE}
+            - LOKI_HOST=${LOKI_HOST}
+            - LOKI_USERNAME=${LOKI_USERNAME}
+            - LOKI_PASSWORD=${LOKI_PASSWORD}
         restart: unless-stopped
-        networks:
-            - nomas-network
-
-    mongodb:
-        image: mongo:7.0
-        container_name: nomas-mongodb
-        ports:
-            - "${MONGODB_GAME_PORT:-27017}:27017"
-        environment:
-            - MONGO_INITDB_ROOT_USERNAME=${MONGODB_GAME_USERNAME:-root}
-            - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_GAME_PASSWORD:-Cuong123_A}
-            - MONGO_INITDB_DATABASE=${MONGODB_GAME_DATABASE:-game}
-        volumes:
-            - mongodb_data:/data/db
-        healthcheck:
-            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 40s
-        restart: unless-stopped
-        networks:
-            - nomas-network
-
-    redis-colyseus:
-        image: redis:7-alpine
-        container_name: nomas-redis-colyseus
-        ports:
-            - "${REDIS_COLYSEUS_PORT:-6379}:6379"
-        command: redis-server --requirepass ${REDIS_COLYSEUS_PASSWORD:-Cuong123_A}
-        environment:
-            - REDIS_PASSWORD=${REDIS_COLYSEUS_PASSWORD:-Cuong123_A}
-        volumes:
-            - redis_colyseus_data:/data
-        healthcheck:
-            test: ["CMD", "sh", "-c", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 10s
-        restart: unless-stopped
-        networks:
-            - nomas-network
-
-    redis-throttler:
-        image: redis:7-alpine
-        container_name: nomas-redis-throttler
-        ports:
-            - "${REDIS_THROTTLER_PORT:-6380}:6379"
-        command: redis-server --requirepass ${REDIS_THROTTLER_PASSWORD:-Cuong123_A}
-        environment:
-            - REDIS_PASSWORD=${REDIS_THROTTLER_PASSWORD:-Cuong123_A}
-        volumes:
-            - redis_throttler_data:/data
-        healthcheck:
-            test: ["CMD", "sh", "-c", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 10s
-        restart: unless-stopped
-        networks:
-            - nomas-network
-
-    redis-cache:
-        image: redis:7-alpine
-        container_name: nomas-redis-cache
-        ports:
-            - "${REDIS_CACHE_PORT:-6381}:6379"
-        command: redis-server --requirepass ${REDIS_CACHE_PASSWORD:-Cuong123_A}
-        environment:
-            - REDIS_PASSWORD=${REDIS_CACHE_PASSWORD:-Cuong123_A}
-        volumes:
-            - redis_cache_data:/data
-        healthcheck:
-            test: ["CMD", "sh", "-c", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
-            interval: 10s
-            timeout: 3s
-            retries: 5
-            start_period: 10s
-        restart: unless-stopped
-        networks:
-            - nomas-network
-
-volumes:
-    mongodb_data:
-    redis_colyseus_data:
-    redis_throttler_data:
-    redis_cache_data:
-
-networks:
-    nomas-network:
-        driver: bridge

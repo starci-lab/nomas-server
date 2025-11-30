@@ -28,31 +28,32 @@ jobs:
                   NODE_ENV: ${{ vars.NODE_ENV }}
                   PORT: ${{ vars.PORT }}
                   COLYSEUS_PORT: ${{ vars.COLYSEUS_PORT }}
+                  MONGODB_GAME_HOST: ${{ vars.MONGODB_GAME_HOST }}
                   MONGODB_GAME_PORT: ${{ vars.MONGODB_GAME_PORT }}
                   MONGODB_GAME_DATABASE: ${{ vars.MONGODB_GAME_DATABASE }}
-                  MONGODB_GAME_USERNAME: ${{ vars.MONGODB_GAME_USERNAME }}
                   REDIS_COLYSEUS_PORT: ${{ vars.REDIS_COLYSEUS_PORT }}
-                  REDIS_COLYSEUS_USERNAME: ${{ vars.REDIS_COLYSEUS_USERNAME }}
                   REDIS_COLYSEUS_REQUIRE_PASSWORD: ${{ vars.REDIS_COLYSEUS_REQUIRE_PASSWORD }}
                   REDIS_THROTTLER_PORT: ${{ vars.REDIS_THROTTLER_PORT }}
-                  REDIS_THROTTLER_USERNAME: ${{ vars.REDIS_THROTTLER_USERNAME }}
                   REDIS_THROTTLER_REQUIRE_PASSWORD: ${{ vars.REDIS_THROTTLER_REQUIRE_PASSWORD }}
                   REDIS_CACHE_PORT: ${{ vars.REDIS_CACHE_PORT }}
-                  REDIS_CACHE_USERNAME: ${{ vars.REDIS_CACHE_USERNAME }}
                   REDIS_CACHE_REQUIRE_PASSWORD: ${{ vars.REDIS_CACHE_REQUIRE_PASSWORD }}
                   JWT_REFRESH_TOKEN_EXPIRATION: ${{ vars.JWT_REFRESH_TOKEN_EXPIRATION }}
                   JWT_ACCESS_TOKEN_EXPIRATION: ${{ vars.JWT_ACCESS_TOKEN_EXPIRATION }}
                   SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
                   LOKI_HOST: ${{ vars.LOKI_HOST }}
-                  LOKI_USERNAME: ${{ vars.LOKI_USERNAME }}
 
                   # ====== Sensitive config (Secrets) ======
+                  MONGODB_GAME_USERNAME: ${{ secrets.MONGODB_GAME_USERNAME }}
                   MONGODB_GAME_PASSWORD: ${{ secrets.MONGODB_GAME_PASSWORD }}
+                  REDIS_COLYSEUS_USERNAME: ${{ secrets.REDIS_COLYSEUS_USERNAME }}
                   REDIS_COLYSEUS_PASSWORD: ${{ secrets.REDIS_COLYSEUS_PASSWORD }}
+                  REDIS_THROTTLER_USERNAME: ${{ secrets.REDIS_THROTTLER_USERNAME }}
                   REDIS_THROTTLER_PASSWORD: ${{ secrets.REDIS_THROTTLER_PASSWORD }}
+                  REDIS_CACHE_USERNAME: ${{ secrets.REDIS_CACHE_USERNAME }}
                   REDIS_CACHE_PASSWORD: ${{ secrets.REDIS_CACHE_PASSWORD }}
                   JWT_SECRET: ${{ secrets.JWT_SECRET }}
                   SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+                  LOKI_USERNAME: ${{ secrets.LOKI_USERNAME }}
                   LOKI_PASSWORD: ${{ secrets.LOKI_PASSWORD }}
               run: |
                   cd apps/nomas-colyseus
