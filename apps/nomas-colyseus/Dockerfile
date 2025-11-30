@@ -5,11 +5,11 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json from the root directory (important for npm ci)
 # This assumes the build context is the root directory of the repository.
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-# Copy the configuration files of the sub-application from the relative path
-COPY apps/nomas-colyseus/nest-cli.json ./
-COPY apps/nomas-colyseus/tsconfig*.json ./
+# Copy configuration files from root
+COPY nest-cli.json ./
+COPY tsconfig*.json ./
 
 # Install all dependencies (including devDependencies for building)
 RUN npm ci
@@ -27,7 +27,7 @@ FROM node:23-alpine
 WORKDIR /app
 
 # Copy package.json and package-lock.json (only for production deps)
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 # Install the dependencies for the production environment and the necessary packages
 RUN npm ci --only=production && \
