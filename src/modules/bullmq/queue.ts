@@ -23,17 +23,58 @@ export const bullData: Record<BullQueueName, BullQueueData> = {
             // Automatically remove completed jobs after reaching the configured limit
             removeOnComplete: {
                 // Age is computed from job count divided by 1000 for rough cleanup pacing
-                age: new Decimal(envConfig().bullmq.completedJobCount)
-                    .div(1000)
-                    .toNumber(),
+                age: new Decimal(envConfig().bullmq.completedJobCount).div(1000).toNumber(),
                 count: envConfig().bullmq.completedJobCount,
             },
 
             // Automatically remove failed jobs after reaching the configured limit
             removeOnFail: {
-                age: new Decimal(envConfig().bullmq.failedJobCount)
-                    .div(1000)
-                    .toNumber(),
+                age: new Decimal(envConfig().bullmq.failedJobCount).div(1000).toNumber(),
+                count: envConfig().bullmq.failedJobCount,
+            },
+        },
+    },
+    [BullQueueName.Pet]: {
+        prefix: formatWithBraces("pet"),
+        name: "update-pet-stats",
+        batchSize: 100,
+        opts: {
+            removeOnComplete: {
+                age: new Decimal(envConfig().bullmq.completedJobCount).div(1000).toNumber(),
+                count: envConfig().bullmq.completedJobCount,
+            },
+            removeOnFail: {
+                age: new Decimal(envConfig().bullmq.failedJobCount).div(1000).toNumber(),
+                count: envConfig().bullmq.failedJobCount,
+            },
+        },
+    },
+    [BullQueueName.PetEvolution]: {
+        prefix: formatWithBraces("pet_evolution"),
+        name: "update-evolution",
+        batchSize: 100,
+        opts: {
+            removeOnComplete: {
+                age: new Decimal(envConfig().bullmq.completedJobCount).div(1000).toNumber(),
+                count: envConfig().bullmq.completedJobCount,
+            },
+            removeOnFail: {
+                age: new Decimal(envConfig().bullmq.failedJobCount).div(1000).toNumber(),
+                count: envConfig().bullmq.failedJobCount,
+            },
+        },
+    },
+    [BullQueueName.PetIncome]: {
+        prefix: formatWithBraces("pet_income"),
+        name: "create-income",
+        batchSize: 100,
+        opts: {
+            removeOnComplete: {
+                age: new Decimal(envConfig().bullmq.completedJobCount).div(1000).toNumber(),
+                count: envConfig().bullmq.completedJobCount,
+            },
+            removeOnFail: {
+                age: new Decimal(envConfig().bullmq.failedJobCount).div(1000).toNumber(),
                 count: envConfig().bullmq.failedJobCount,
             },
         },

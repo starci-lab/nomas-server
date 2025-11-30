@@ -4,8 +4,8 @@ import { DynamicModule, Module } from "@nestjs/common"
 import { BullQueueName, RegisterQueueOptions } from "./types"
 import { bullData } from "./queue"
 import { envConfig } from "@modules/env/config"
-import { createIoRedisKey, IoRedisModule } from "@modules/native"
 import Redis from "ioredis"
+import { createIoRedisKey, IoRedisModule } from "@modules/native"
 
 @Module({})
 export class BullModule extends ConfigurableModuleClass {
@@ -38,13 +38,15 @@ export class BullModule extends ConfigurableModuleClass {
                             port: envConfig().redis.cache.port as number,
                             password: envConfig().redis.cache.password,
                             requirePassword: envConfig().redis.cache.requirePassword,
+                            maxRetriesPerRequest: null,
                         }),
                     ],
                     inject: [createIoRedisKey()],
-                    useFactory: async (redis: Redis) => ({
-                        // connection to redis
-                        connection: redis,
-                    }),
+                    useFactory: async (redis: Redis) => {
+                        return {
+                            connection: redis,
+                        }
+                    },
                 }),
             ],
         }
