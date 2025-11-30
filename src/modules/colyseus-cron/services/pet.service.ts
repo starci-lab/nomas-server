@@ -22,7 +22,7 @@ export class PetService {
      * Find all active pets
      */
     async findActivePets() {
-        return this.ownedPetModel.find({ status: PetStatus.Active }).populate("type").populate("user").exec()
+        return this.ownedPetModel.find({ status: PetStatus.Active }).populate("type").exec()
     }
 
     /**
