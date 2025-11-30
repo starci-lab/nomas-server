@@ -55,6 +55,10 @@ jobs:
                   SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
                   LOKI_USERNAME: ${{ secrets.LOKI_USERNAME }}
                   LOKI_PASSWORD: ${{ secrets.LOKI_PASSWORD }}
+                  GRAPHQL_ADMIN_USERNAME: ${{ secrets.GRAPHQL_ADMIN_USERNAME }}
+                  GRAPHQL_ADMIN_PASSWORD: ${{ secrets.GRAPHQL_ADMIN_PASSWORD }}
+                  COLYSEUS_ADMIN_USERNAME: ${{ secrets.COLYSEUS_ADMIN_USERNAME }}
+                  COLYSEUS_ADMIN_PASSWORD: ${{ secrets.COLYSEUS_ADMIN_PASSWORD }}
               run: |
                   cd apps/nomas-colyseus
                   docker compose down --remove-orphans
