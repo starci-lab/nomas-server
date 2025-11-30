@@ -1,7 +1,4 @@
-ARG NODE_VERSION=23.5.0
-
-# Step 1: Build (Build the application)
-FROM node:${NODE_VERSION}-alpine AS build
+FROM node:23.5.0-alpine AS build
 
 WORKDIR /usr/src/app
 
@@ -18,8 +15,7 @@ COPY . .
 # The output will be in /usr/src/app/dist/apps/nomas-colyseus/
 RUN npx nest build nomas-colyseus
 
-# Step 2: Production (Final image)
-FROM node:${NODE_VERSION}-alpine AS production
+FROM node:23.5.0-alpine AS production
 
 # Default ports for Colyseus (2567) and the API you defined (3002)
 EXPOSE 3002 2567
