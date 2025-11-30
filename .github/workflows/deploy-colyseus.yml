@@ -103,15 +103,6 @@ jobs:
                   # Loki Secrets
                   LOKI_USERNAME: ${{ secrets.LOKI_USERNAME }}
                   LOKI_PASSWORD: ${{ secrets.LOKI_PASSWORD }}
-
-                  # Sentry Secrets
-                  SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-
-                  # Mock Private Keys (should be secrets for security)
-                  MOCK_PRIVATE_KEY_EVM: ${{ secrets.MOCK_PRIVATE_KEY_EVM }}
-                  MOCK_PRIVATE_KEY_SOLANA: ${{ secrets.MOCK_PRIVATE_KEY_SOLANA }}
-                  MOCK_PRIVATE_KEY_SUI: ${{ secrets.MOCK_PRIVATE_KEY_SUI }}
-                  MOCK_PRIVATE_KEY_APTOS: ${{ secrets.MOCK_PRIVATE_KEY_APTOS }}
               run: |
                   cd apps/nomas-colyseus
                   docker compose down --remove-orphans
