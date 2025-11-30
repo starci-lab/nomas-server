@@ -57,7 +57,6 @@ jobs:
 
                   # Loki Configuration
                   LOKI_HOST: ${{ vars.LOKI_HOST }}
-                  LOKI_REQUIRE_AUTH: ${{ vars.LOKI_REQUIRE_AUTH }}
 
                   # Kafka Configuration
                   KAFKA_HOST: ${{ vars.KAFKA_HOST }}

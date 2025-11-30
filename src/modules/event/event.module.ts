@@ -6,23 +6,21 @@ import { EventEmitterService } from "./event-emitter.service"
 
 @Module({})
 export class EventModule extends ConfigurableModuleClass {
-    static register(
-        options: typeof OPTIONS_TYPE
-    ): DynamicModule {
+    static register(options: typeof OPTIONS_TYPE): DynamicModule {
         const dynamicModule = super.register(options)
         const imports: Array<DynamicModule> = []
         imports.push(EventEmitterModule.forRoot())
-        imports.push(KafkaModule.register({
-            isGlobal: options.isGlobal,
-        }))
-        const providers: Array<Provider> = [
-            EventEmitterService
-        ]
+        imports.push(
+            KafkaModule.register({
+                isGlobal: options.isGlobal,
+            }),
+        )
+        const providers: Array<Provider> = [EventEmitterService]
         return {
             ...dynamicModule,
             imports,
-            providers: [...dynamicModule.providers || [], ...providers],
+            providers: [...(dynamicModule.providers || []), ...providers],
             exports: [...providers],
         }
     }
-}   
+}
