@@ -22,6 +22,61 @@ jobs:
             - name: Checkout source code
               uses: actions/checkout@v4
 
+            - name: Debug Environment Variables
+              env:
+                  # ====== Non-sensitive config (Vars) ======
+                  NODE_ENV: ${{ vars.NODE_ENV }}
+                  PORT: ${{ vars.PORT }}
+                  COLYSEUS_PORT: ${{ vars.COLYSEUS_PORT }}
+                  MONGODB_GAME_HOST: ${{ vars.MONGODB_GAME_HOST }}
+                  MONGODB_GAME_PORT: ${{ vars.MONGODB_GAME_PORT }}
+                  MONGODB_GAME_DATABASE: ${{ vars.MONGODB_GAME_DATABASE }}
+                  REDIS_COLYSEUS_PORT: ${{ vars.REDIS_COLYSEUS_PORT }}
+                  REDIS_COLYSEUS_REQUIRE_PASSWORD: ${{ vars.REDIS_COLYSEUS_REQUIRE_PASSWORD }}
+                  REDIS_THROTTLER_PORT: ${{ vars.REDIS_THROTTLER_PORT }}
+                  REDIS_THROTTLER_REQUIRE_PASSWORD: ${{ vars.REDIS_THROTTLER_REQUIRE_PASSWORD }}
+                  REDIS_CACHE_PORT: ${{ vars.REDIS_CACHE_PORT }}
+                  REDIS_CACHE_REQUIRE_PASSWORD: ${{ vars.REDIS_CACHE_REQUIRE_PASSWORD }}
+                  JWT_REFRESH_TOKEN_EXPIRATION: ${{ vars.JWT_REFRESH_TOKEN_EXPIRATION }}
+                  JWT_ACCESS_TOKEN_EXPIRATION: ${{ vars.JWT_ACCESS_TOKEN_EXPIRATION }}
+                  SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
+                  LOKI_HOST: ${{ vars.LOKI_HOST }}
+                  REDIS_COLYSEUS_HOST: ${{ vars.REDIS_COLYSEUS_HOST }}
+                  REDIS_THROTTLER_HOST: ${{ vars.REDIS_THROTTLER_HOST }}
+                  REDIS_CACHE_HOST: ${{ vars.REDIS_CACHE_HOST }}
+                  KAFKA_HOST: ${{ vars.KAFKA_HOST }}
+                  KAFKA_PORT: ${{ vars.KAFKA_PORT }}
+              run: |
+                  echo "=== Environment Variables Debug ==="
+                  echo "NODE_ENV=${NODE_ENV:-NOT_SET}"
+                  echo "PORT=${PORT:-NOT_SET}"
+                  echo "COLYSEUS_PORT=${COLYSEUS_PORT:-NOT_SET}"
+                  echo "MONGODB_GAME_HOST=${MONGODB_GAME_HOST:-NOT_SET}"
+                  echo "MONGODB_GAME_PORT=${MONGODB_GAME_PORT:-NOT_SET}"
+                  echo "MONGODB_GAME_DATABASE=${MONGODB_GAME_DATABASE:-NOT_SET}"
+                  echo "REDIS_COLYSEUS_HOST=${REDIS_COLYSEUS_HOST:-NOT_SET}"
+                  echo "REDIS_COLYSEUS_PORT=${REDIS_COLYSEUS_PORT:-NOT_SET}"
+                  echo "REDIS_COLYSEUS_REQUIRE_PASSWORD=${REDIS_COLYSEUS_REQUIRE_PASSWORD:-NOT_SET}"
+                  echo "REDIS_THROTTLER_HOST=${REDIS_THROTTLER_HOST:-NOT_SET}"
+                  echo "REDIS_THROTTLER_PORT=${REDIS_THROTTLER_PORT:-NOT_SET}"
+                  echo "REDIS_THROTTLER_REQUIRE_PASSWORD=${REDIS_THROTTLER_REQUIRE_PASSWORD:-NOT_SET}"
+                  echo "REDIS_CACHE_HOST=${REDIS_CACHE_HOST:-NOT_SET}"
+                  echo "REDIS_CACHE_PORT=${REDIS_CACHE_PORT:-NOT_SET}"
+                  echo "REDIS_CACHE_REQUIRE_PASSWORD=${REDIS_CACHE_REQUIRE_PASSWORD:-NOT_SET}"
+                  echo "KAFKA_HOST=${KAFKA_HOST:-NOT_SET}"
+                  echo "KAFKA_PORT=${KAFKA_PORT:-NOT_SET}"
+                  echo "LOKI_HOST=${LOKI_HOST:-NOT_SET}"
+                  echo "SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE:-NOT_SET}"
+                  echo "JWT_REFRESH_TOKEN_EXPIRATION=${JWT_REFRESH_TOKEN_EXPIRATION:-NOT_SET}"
+                  echo "JWT_ACCESS_TOKEN_EXPIRATION=${JWT_ACCESS_TOKEN_EXPIRATION:-NOT_SET}"
+                  echo "==================================="
+                  echo ""
+                  echo "Checking if secrets are set (without showing values):"
+                  echo "MONGODB_GAME_USERNAME is ${MONGODB_GAME_USERNAME:+SET}"
+                  echo "MONGODB_GAME_PASSWORD is ${MONGODB_GAME_PASSWORD:+SET}"
+                  echo "JWT_SECRET is ${JWT_SECRET:+SET}"
+                  echo "==================================="
+
             - name: Build and run Docker Compose
               env:
                   # ====== Non-sensitive config (Vars) ======
@@ -68,6 +123,7 @@ jobs:
                   COLYSEUS_ADMIN_USERNAME: ${{ secrets.COLYSEUS_ADMIN_USERNAME }}
                   COLYSEUS_ADMIN_PASSWORD: ${{ secrets.COLYSEUS_ADMIN_PASSWORD }}
               run: |
+                  echo "=== Starting Docker Compose ==="
                   cd apps/nomas-colyseus
                   docker compose down --remove-orphans
                   docker compose up -d --build
