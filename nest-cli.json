@@ -1,41 +1,41 @@
 {
-  "$schema": "https://json.schemastore.org/nest-cli",
-  "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/nomas-server/src",
-  "compilerOptions": {
-    "deleteOutDir": true,
-    "webpack": true,
-    "tsConfigPath": "apps/nomas-server/tsconfig.app.json"
-  },
-  "monorepo": true,
-  "root": "apps/nomas-server",
-  "projects": {
-    "core": {
-      "type": "application",
-      "root": "apps/core",
-      "entryFile": "main",
-      "sourceRoot": "apps/core/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/core/tsconfig.app.json"
-      }
-    },
-    "nomas-colyseus": {
-      "type": "application",
-      "root": "apps/nomas-colyseus",
-      "entryFile": "main",
-      "sourceRoot": "apps/nomas-colyseus/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/nomas-colyseus/tsconfig.app.json"
-      }
-    },
-    "nomas-server": {
-      "type": "application",
-      "root": "apps/nomas-server",
-      "entryFile": "main",
-      "sourceRoot": "apps/nomas-server/src",
-      "compilerOptions": {
+    "$schema": "https://json.schemastore.org/nest-cli",
+    "collection": "@nestjs/schematics",
+    "sourceRoot": "apps/nomas-server/src",
+    "compilerOptions": {
+        "deleteOutDir": true,
+        "webpack": true,
         "tsConfigPath": "apps/nomas-server/tsconfig.app.json"
-      }
+    },
+    "monorepo": true,
+    "root": "apps/nomas-server",
+    "projects": {
+        "core": {
+            "type": "application",
+            "root": "apps/core",
+            "entryFile": "main",
+            "sourceRoot": "apps/core/src",
+            "compilerOptions": {
+                "tsConfigPath": "apps/core/tsconfig.app.json"
+            }
+        },
+        "nomas-colyseus": {
+            "type": "application",
+            "root": "apps/nomas-colyseus",
+            "entryFile": "main",
+            "sourceRoot": "apps/nomas-colyseus/src",
+            "compilerOptions": {
+                "tsConfigPath": "apps/nomas-colyseus/tsconfig.app.json"
+            }
+        },
+        "nomas-server": {
+            "type": "application",
+            "root": "apps/nomas-server",
+            "entryFile": "main",
+            "sourceRoot": "apps/nomas-server/src",
+            "compilerOptions": {
+                "tsConfigPath": "apps/nomas-server/tsconfig.app.json"
+            }
+        }
     }
-  }
 }

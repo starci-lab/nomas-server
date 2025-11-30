@@ -13,6 +13,8 @@ export interface IoRedisOptions {
     requirePassword: boolean
     // Additional instance keys
     additionalInstanceKeys?: Array<string>
+    // The max retries per request
+    maxRetriesPerRequest?: number | null
 }
 
 export type RedisOrCluster = Redis | Cluster

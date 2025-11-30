@@ -24,9 +24,9 @@ import {
     SendPetsStateSyncPayload,
 } from "../../events"
 import { AbstractReceiverGameRoom } from "./receiver.room"
-import { PlayerColyseusSchema } from "../../schemas"
-import { OnEvent } from "@nestjs/event-emitter"
-import { GameInventoryEvent, GameFoodEvent } from "@modules/colyseus/events"
+import { PlayerColyseusSchema, PetColyseusSchema } from "../../schemas"
+import { OnRoomEvent } from "../../decorators"
+import { GameInventoryEvent, GameFoodEvent, GamePetEvent, GamePlayerEvent } from "@modules/colyseus/events"
 import {
     PurchaseInventoryItemResponsePayload,
     GetInventoryResponsePayload,
@@ -37,6 +37,24 @@ import {
     GetFoodInventoryResponsePayload,
     FeedPetWithFoodResponsePayload,
 } from "@modules/colyseus/handlers/food/types"
+import {
+    BuyPetResponsePayload,
+    RemovePetResponsePayload,
+    FeedPetResponsePayload,
+    PlayPetResponsePayload,
+    CleanPetResponsePayload,
+    CleanedPetResponsePayload,
+    CreatePoopResponsePayload,
+} from "@modules/colyseus/handlers/pet/types"
+import {
+    GetGameConfigResponsePayload,
+    GetPlayerStateResponsePayload,
+    GetProfileResponsePayload,
+    GetPetsStateResponsePayload,
+    ClaimDailyRewardResponsePayload,
+    UpdateSettingsResponsePayload,
+    UpdateTutorialResponsePayload,
+} from "@modules/colyseus/handlers/player/types"
 
 export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     protected sendWelcomeMessage(client: Client, player: PlayerColyseusSchema) {
@@ -144,7 +162,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
     // - This class: Listens response events → converts to send payloads → sends to client
     // ============================================================================
 
-    @OnEvent(GameInventoryEvent.PurchaseItemResponse)
+    @OnRoomEvent(GameInventoryEvent.PurchaseItemResponse)
     onPurchaseItemResponse(payload: PurchaseInventoryItemResponsePayload) {
         const sendPayload: SendPurchaseResponsePayload = {
             success: payload.result.success,
@@ -156,7 +174,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendPurchaseResponse(payload.client, sendPayload)
     }
 
-    @OnEvent(GameInventoryEvent.GetInventoryResponse)
+    @OnRoomEvent(GameInventoryEvent.GetInventoryResponse)
     onGetInventoryResponse(payload: GetInventoryResponsePayload) {
         const sendPayload: SendInventoryResponsePayload = {
             success: payload.result.success,
@@ -169,7 +187,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendInventoryResponse(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.PurchaseResponse)
+    @OnRoomEvent(GameFoodEvent.PurchaseResponse)
     onPurchaseFoodResponse(payload: PurchaseFoodResponsePayload) {
         const sendPayload: SendPurchaseResponsePayload = {
             success: payload.result.success,
@@ -181,7 +199,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendPurchaseResponse(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.GetCatalogResponse)
+    @OnRoomEvent(GameFoodEvent.GetCatalogResponse)
     onGetCatalogResponse(payload: GetCatalogResponsePayload) {
         const sendPayload: SendStoreCatalogPayload = {
             success: payload.result.success,
@@ -193,7 +211,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendStoreCatalog(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.GetInventoryResponse)
+    @OnRoomEvent(GameFoodEvent.GetInventoryResponse)
     onGetFoodInventoryResponse(payload: GetFoodInventoryResponsePayload) {
         const sendPayload: SendFoodInventoryPayload = {
             success: payload.result.success,
@@ -205,7 +223,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendFoodInventory(payload.client, sendPayload)
     }
 
-    @OnEvent(GameFoodEvent.FeedPetResponse)
+    @OnRoomEvent(GameFoodEvent.FeedPetResponse)
     onFeedPetResponse(payload: FeedPetWithFoodResponsePayload) {
         const sendPayload: SendFeedResultPayload = {
             success: payload.result.success,
@@ -215,5 +233,202 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
             timestamp: Date.now(),
         }
         this.sendFeedResult(payload.client, sendPayload)
+    }
+
+    // Pet response event handlers
+    @OnRoomEvent(GamePetEvent.BuyResponse)
+    onBuyPetResponse(payload: BuyPetResponsePayload) {
+        this.sendBuyPetResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    @OnRoomEvent(GamePetEvent.RemoveResponse)
+    onRemovePetResponse(payload: RemovePetResponsePayload) {
+        this.sendRemovePetResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    @OnRoomEvent(GamePetEvent.FeedResponse)
+    onPetFeedResponse(payload: FeedPetResponsePayload) {
+        this.sendActionResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    @OnRoomEvent(GamePetEvent.PlayResponse)
+    onPlayPetResponse(payload: PlayPetResponsePayload) {
+        this.sendActionResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    @OnRoomEvent(GamePetEvent.CleanResponse)
+    onCleanPetResponse(payload: CleanPetResponsePayload) {
+        this.sendActionResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    @OnRoomEvent(GamePetEvent.CleanedResponse)
+    onCleanedPetResponse(payload: CleanedPetResponsePayload) {
+        this.sendCleanedPetResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    @OnRoomEvent(GamePetEvent.CreatePoopResponse)
+    onCreatePoopResponse(payload: CreatePoopResponsePayload) {
+        this.sendCreatePoopResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+        if (payload.result.player) {
+            this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+        }
+    }
+
+    // Player response event handlers
+    @OnRoomEvent(GamePlayerEvent.GetGameConfigResponse)
+    onGetGameConfigResponse(payload: GetGameConfigResponsePayload) {
+        this.sendGameConfigResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            config: payload.result.config,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    @OnRoomEvent(GamePlayerEvent.GetPlayerStateResponse)
+    onGetPlayerStateResponse(payload: GetPlayerStateResponsePayload) {
+        this.sendPlayerStateResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    @OnRoomEvent(GamePlayerEvent.GetProfileResponse)
+    onGetProfileResponse(payload: GetProfileResponsePayload) {
+        this.sendProfileResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    @OnRoomEvent(GamePlayerEvent.GetPetsStateResponse)
+    onGetPetsStateResponse(payload: GetPetsStateResponsePayload) {
+        this.sendPetsStateResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    @OnRoomEvent(GamePlayerEvent.ClaimDailyRewardResponse)
+    onClaimDailyRewardResponse(payload: ClaimDailyRewardResponsePayload) {
+        this.sendDailyRewardResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    @OnRoomEvent(GamePlayerEvent.UpdateSettingsResponse)
+    onUpdateSettingsResponse(payload: UpdateSettingsResponsePayload) {
+        this.sendSettingsResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    @OnRoomEvent(GamePlayerEvent.UpdateTutorialResponse)
+    onUpdateTutorialResponse(payload: UpdateTutorialResponsePayload) {
+        this.sendTutorialResponse(payload.client, {
+            success: payload.result.success,
+            message: payload.result.message,
+            data: payload.result.data,
+            error: payload.result.error,
+            timestamp: Date.now(),
+        })
+    }
+
+    // Helper method to map pets to sync payload
+    private mapPetsToSyncPayload(player: PlayerColyseusSchema): SendPetsStateSyncPayload {
+        const pets: PetColyseusSchema[] = []
+        if (player.pets) {
+            player.pets.forEach((pet: PetColyseusSchema) => pets.push(pet))
+        }
+        return {
+            pets: pets.map((pet: PetColyseusSchema) => ({
+                id: pet.id,
+                ownerId: pet.ownerId,
+                petType: pet.petType,
+                hunger: pet.hunger,
+                happiness: pet.happiness,
+                cleanliness: pet.cleanliness,
+                lastUpdated: pet.lastUpdated,
+            })),
+            timestamp: Date.now(),
+        }
     }
 }

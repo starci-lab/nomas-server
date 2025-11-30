@@ -6,6 +6,9 @@ import { BulkJobOptions } from "bullmq"
  */
 export enum BullQueueName {
     LiquidityPools = "liquidityPools",
+    Pet = "pet",
+    PetEvolution = "petEvolution",
+    PetIncome = "petIncome",
 }
 
 /**

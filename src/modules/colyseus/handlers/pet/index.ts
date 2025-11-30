@@ -1,3 +1,3 @@
 export * from "./pet.module"
-export * from "./pet.event-handler"
+export * from "./pet.handler"
 export * from "./types"

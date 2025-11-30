@@ -11,4 +11,5 @@ export enum CacheKey {
     User = "user",
     UserIds = "userIds",
     SessionId = "sessionId",
+    SessionBlacklist = "sessionBlacklist",
 }

@@ -15,13 +15,13 @@ export class SystemSchema extends AbstractSchema {
         description: "The display ID of the system",
     })
     @Prop({ type: String, enum: SystemId, required: true, unique: true })
-    displayId: SystemId
+        displayId: SystemId
 
     @Field(() => JSON, {
         description: "The system configuration value",
     })
     @Prop({ type: Object, required: true })
-    value: object
+        value: object
 }
 
 @ObjectType({
@@ -36,19 +36,19 @@ export class DefaultInfoSchema {
         description: "Default starting token NOMamount",
     })
     @Prop({ type: Number, required: true, default: 10000 })
-    tokenNom: number
+        tokenNom: number
 
     @Field(() => GraphQLTypePetId, {
         description: "Default pet ID given to new users",
     })
     @Prop({ type: String, enum: PetId, required: true, default: PetId.Chog })
-    defaultPetId: PetId
+        defaultPetId: PetId
 
     @Field(() => GraphQLTypePetName, {
         description: "Default pet name given to new users",
     })
     @Prop({ type: String, enum: PetName, required: true, default: PetName.Chog })
-    defaultPetName: PetName
+        defaultPetName: PetName
 }
 
 export const SystemSchemaClass = SchemaFactory.createForClass(SystemSchema)

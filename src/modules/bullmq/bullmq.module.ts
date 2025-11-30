@@ -1,12 +1,11 @@
-
 import { BullModule as NestBullModule } from "@nestjs/bullmq"
 import { ConfigurableModuleClass, OPTIONS_TYPE } from "./bullmq.module-definition"
 import { DynamicModule, Module } from "@nestjs/common"
 import { BullQueueName, RegisterQueueOptions } from "./types"
 import { bullData } from "./queue"
 import { envConfig } from "@modules/env/config"
-import { createIoRedisKey, IoRedisModule } from "@modules/native"
 import Redis from "ioredis"
+import { createIoRedisKey, IoRedisModule } from "@modules/native"
 
 @Module({})
 export class BullModule extends ConfigurableModuleClass {
@@ -16,13 +15,13 @@ export class BullModule extends ConfigurableModuleClass {
         // register the queue
         const registerQueueDynamicModule = NestBullModule.registerQueue({
             name: `${bullData[queueName].name}`,
-            prefix: bullData[queueName].prefix
+            prefix: bullData[queueName].prefix,
         })
         return {
             global: options.isGlobal,
             module: BullModule,
             imports: [registerQueueDynamicModule],
-            exports: [registerQueueDynamicModule]
+            exports: [registerQueueDynamicModule],
         }
     }
 
@@ -35,18 +34,21 @@ export class BullModule extends ConfigurableModuleClass {
                 NestBullModule.forRootAsync({
                     imports: [
                         IoRedisModule.register({
-                            host: envConfig().redis.host,
-                            port: envConfig().redis.port,
-                            password: envConfig().redis.password,
+                            host: envConfig().redis.cache.host,
+                            port: envConfig().redis.cache.port as number,
+                            password: envConfig().redis.cache.password,
+                            requirePassword: envConfig().redis.cache.requirePassword,
+                            maxRetriesPerRequest: null,
                         }),
                     ],
                     inject: [createIoRedisKey()],
-                    useFactory: async (redis: Redis) => ({
-                        // connection to redis
-                        connection: redis,
-                    })
-                })
-            ]
+                    useFactory: async (redis: Redis) => {
+                        return {
+                            connection: redis,
+                        }
+                    },
+                }),
+            ],
         }
     }
 }

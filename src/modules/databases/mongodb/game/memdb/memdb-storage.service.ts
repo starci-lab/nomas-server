@@ -3,7 +3,7 @@ import { InjectGameMongoose } from "../decorators"
 import { Connection } from "mongoose"
 import { SystemSchema, PetSchema, StoreItemSchema, DefaultInfoSchema } from "../schemas"
 import { RetryService } from "@modules/mixin"
-import { PetId, SystemId } from "@modules/databases/mongodb/game/enums"
+import { PetId, PetName, SystemId } from "@modules/databases/mongodb/game/enums"
 
 @Injectable()
 export class MemdbStorageService implements OnModuleInit {
@@ -13,6 +13,7 @@ export class MemdbStorageService implements OnModuleInit {
     private defaultInfo: DefaultInfoSchema = {
         tokenNom: 10000,
         defaultPetId: PetId.Chog,
+        defaultPetName: PetName.Chog,
     }
 
     // constructor

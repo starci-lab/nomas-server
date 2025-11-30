@@ -6,7 +6,7 @@
             "request": "launch",
             "name": "Nomas Colyseus Debug",
             "runtimeExecutable": "npm",
-            "runtimeArgs": ["run", "start:colyseus:debug"],
+            "runtimeArgs": ["run", "start:debug nomas-colyseus"],
             "autoAttachChildProcesses": true,
             "restart": true,
             "sourceMaps": true,

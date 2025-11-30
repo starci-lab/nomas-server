@@ -204,3 +204,46 @@ export type StateRoom = {
         poops: Array<{ id: string; petId: string; positionX: number; positionY: number }>
     }
 }
+
+// Response payload types for event system
+export interface BuyPetResponsePayload {
+    client: Client
+    sessionId: string
+    result: BuyPetResult
+}
+
+export interface RemovePetResponsePayload {
+    client: Client
+    sessionId: string
+    result: RemovePetResult
+}
+
+export interface FeedPetResponsePayload {
+    client: Client
+    sessionId: string
+    result: FeedPetResult
+}
+
+export interface PlayPetResponsePayload {
+    client: Client
+    sessionId: string
+    result: PlayPetResult
+}
+
+export interface CleanPetResponsePayload {
+    client: Client
+    sessionId: string
+    result: CleanPetResult
+}
+
+export interface CleanedPetResponsePayload {
+    client: Client
+    sessionId: string
+    result: CleanedPetResult
+}
+
+export interface CreatePoopResponsePayload {
+    client: Client
+    sessionId: string
+    result: CreatePoopResult
+}

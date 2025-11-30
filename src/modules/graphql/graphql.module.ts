@@ -35,6 +35,7 @@ export class GraphQLModule extends ConfigurableModuleClass {
             imports.push(
                 NestGraphQLModule.forRoot<ApolloDriverConfig>({
                     driver: ApolloDriver,
+                    autoTransformHttpErrors: true,
                     playground: false,
                     autoSchemaFile: true,
                     plugins: [ApolloServerPluginLandingPageLocalDefault()],

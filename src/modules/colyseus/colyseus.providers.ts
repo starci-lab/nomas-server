@@ -5,6 +5,9 @@ import { createServer } from "http"
 import { HttpAdapterHost } from "@nestjs/core"
 import { WebSocketTransport } from "@colyseus/ws-transport"
 import { monitor } from "@colyseus/monitor"
+import { playground } from "@colyseus/playground"
+import basicAuth from "express-basic-auth"
+import { envConfig } from "@modules/env"
 
 export const createColyseusServerProvider = (): Provider<Server> => ({
     provide: COLYSEUS_SERVER,
@@ -12,7 +15,17 @@ export const createColyseusServerProvider = (): Provider<Server> => ({
     useFactory: (httpAdapterHost: HttpAdapterHost) => {
         const app = httpAdapterHost.httpAdapter.getInstance()
         // Add Colyseus monitor panel
-        app.use("/monitor", monitor())
+        const basicAuthMiddleware = basicAuth({
+            // list of users and passwords
+            users: {
+                [envConfig().redis.colyseus.adminUsername]: envConfig().redis.colyseus.adminPassword,
+            },
+            // sends WWW-Authenticate header, which will prompt the user to fill
+            // credentials in
+            challenge: true,
+        })
+        app.use("/monitor", basicAuthMiddleware, monitor())
+        app.use("/playground", basicAuthMiddleware, playground())
 
         const server = new Server({
             server: createServer(app),

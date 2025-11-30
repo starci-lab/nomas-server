@@ -1,13 +1,12 @@
-import { Module } from "@nestjs/common"
+import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common"
 import { GameMongooseModule } from "@modules/databases"
 import { MixinModule } from "@modules/mixin"
-import { EnvModule } from "@modules/env"
+import { envConfig, EnvModule } from "@modules/env"
 import { ThrottlerModule } from "@modules/throttler"
 import { PassportModule } from "@modules/passport"
 import { BlockchainModule } from "@modules/blockchain"
 import { ColyseusModule } from "@modules/colyseus"
 import { EventModule } from "@modules/event"
-import { GameplayModule } from "@modules/gameplay"
 import { SentryCatchAllExceptionFilter, SentryModule } from "@modules/sentry"
 import { APP_FILTER } from "@nestjs/core"
 import { GraphQLModule } from "@modules/graphql"
@@ -15,10 +14,17 @@ import { WinstonLevel, WinstonLogType, WinstonModule } from "@winston"
 import { AppService } from "@apps/nomas-server/src/app.service"
 import { TestController } from "./test.controller"
 import { PrometheusModule } from "@modules/prometheus/prometheus.module"
+import { CacheModule } from "@modules/cache"
+import { JwtModule } from "@modules/jwt"
+import { ColyseusCronModule } from "@modules/colyseus-cron"
+import basicAuth from "express-basic-auth"
 
 @Module({
     imports: [
         EnvModule.forRoot({
+            isGlobal: true,
+        }),
+        CacheModule.register({
             isGlobal: true,
         }),
         ThrottlerModule.register({
@@ -28,9 +34,6 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
             isGlobal: true,
         }),
         PassportModule.register({
-            isGlobal: true,
-        }),
-        GameplayModule.register({
             isGlobal: true,
         }),
         // we require mongodb for the core module
@@ -56,6 +59,9 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
             },
             isGlobal: true,
         }),
+        JwtModule.register({
+            isGlobal: true,
+        }),
         WinstonModule.register({
             appName: "nomas-colyseus",
             level: WinstonLevel.Info,
@@ -71,6 +77,9 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
                 enabled: true,
             },
         }),
+        ColyseusCronModule.register({
+            isGlobal: true,
+        }),
     ],
     controllers: [TestController],
     providers: [
@@ -81,4 +90,14 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
         },
     ],
 })
-export class AppModule {}
+export class AppModule {
+    private readonly basicAuthMiddleware = basicAuth({
+        users: {
+            [envConfig().graphql.adminUsername]: envConfig().graphql.adminPassword,
+        },
+        challenge: true,
+    })
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(this.basicAuthMiddleware).forRoutes({ path: "/graphql", method: RequestMethod.ALL })
+    }
+}

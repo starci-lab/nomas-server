@@ -17,6 +17,8 @@ export const envConfig = () => ({
             username: process.env.REDIS_COLYSEUS_USERNAME || "default",
             password: process.env.REDIS_COLYSEUS_PASSWORD || "Cuong123_A",
             requirePassword: process.env.REDIS_COLYSEUS_REQUIRE_PASSWORD === "true",
+            adminUsername: process.env.COLYSEUS_ADMIN_USERNAME || "admin",
+            adminPassword: process.env.COLYSEUS_ADMIN_PASSWORD || "admin",
         },
         throttler: {
             host: process.env.REDIS_THROTTLER_HOST || "localhost",
@@ -33,6 +35,14 @@ export const envConfig = () => ({
             requirePassword: process.env.REDIS_CACHE_REQUIRE_PASSWORD === "true",
             ttl: process.env.REDIS_CACHE_TTL ? Number.parseInt(process.env.REDIS_CACHE_TTL) : 60 * 60 * 24, // 24 hours
         },
+    },
+    bullmq: {
+        completedJobCount: process.env.BULLMQ_COMPLETED_JOB_COUNT
+            ? Number.parseInt(process.env.BULLMQ_COMPLETED_JOB_COUNT)
+            : 1000,
+        failedJobCount: process.env.BULLMQ_FAILED_JOB_COUNT
+            ? Number.parseInt(process.env.BULLMQ_FAILED_JOB_COUNT)
+            : 1000,
     },
     secret: {
         jwt: process.env.JWT_SECRET || "secret",
@@ -83,5 +93,9 @@ export const envConfig = () => ({
         dsn: process.env.SENTRY_DSN,
         environment: process.env.NODE_ENV ?? "development",
         tracesSampleRate: Number.parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE ?? "1.0"),
+    },
+    graphql: {
+        adminUsername: process.env.GRAPHQL_ADMIN_USERNAME || "admin",
+        adminPassword: process.env.GRAPHQL_ADMIN_PASSWORD || "admin",
     },
 })
