@@ -46,8 +46,8 @@ export class PetEvolutionService implements OnModuleInit {
                 {
                     jobId,
                     repeat: {
-                        // Update every 1 second
-                        every: 1000,
+                        // Update every 1 minute
+                        every: 1000 * 60,
                     },
                     // Add cleanup options for repeat jobs
                     removeOnComplete: 5, // Keep only 5 completed instances
@@ -66,8 +66,8 @@ export class PetEvolutionService implements OnModuleInit {
             const jobId = JOB_ID.UPDATE_EVOLUTION
             await this.petEvolutionQueue.removeRepeatable(QUEUE_NAME.UPDATE_EVOLUTION, {
                 jobId,
-                // Update every 1 second
-                every: 1000,
+                // Update every 1 minute
+                every: 1000 * 60,
             })
             this.logger.log(`Removed update evolution job`)
         } catch (error) {

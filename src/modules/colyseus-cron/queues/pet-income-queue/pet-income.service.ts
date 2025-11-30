@@ -45,8 +45,8 @@ export class PetIncomeService implements OnModuleInit {
                 {
                     jobId,
                     repeat: {
-                        // Update every 1 second
-                        every: 1000,
+                        // Update every 1 minute
+                        every: 1000 * 60,
                     },
                     // Add cleanup options for repeat jobs
                     removeOnComplete: 5, // Keep only 5 completed instances
@@ -65,8 +65,8 @@ export class PetIncomeService implements OnModuleInit {
             const jobId = JOB_ID.CREATE_INCOME
             await this.createIncomeQueue.removeRepeatable(QUEUE_NAME.CREATE_INCOME, {
                 jobId,
-                // Update every 1 second
-                every: 1000,
+                // Update every 1 minute
+                every: 1000 * 60,
             })
             this.logger.log(`Removed create income job`)
         } catch (error) {
