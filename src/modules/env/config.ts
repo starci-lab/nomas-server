@@ -54,7 +54,7 @@ export const envConfig = () => ({
         colyseus: process.env.COLYSEUS_PORT ? Number.parseInt(process.env.COLYSEUS_PORT) : 2567,
     },
     kafka: {
-        host: process.env.KAFKA_HOST || "172.17.0.1",
+        host: process.env.KAFKA_HOST || "kafka",
         port: process.env.KAFKA_PORT ? Number.parseInt(process.env.KAFKA_PORT) : 9092,
         clientId: process.env.KAFKA_CLIENT_ID || "kafka",
         sasl: {
