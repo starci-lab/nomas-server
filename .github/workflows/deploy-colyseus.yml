@@ -77,9 +77,3 @@ jobs:
               run: |
                   cd apps/nomas-colyseus
                   docker compose ps
-
-            - name: View logs if failed
-              if: failure()
-              run: |
-                  cd apps/nomas-colyseus
-                  docker compose logs --tail=100
