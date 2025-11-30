@@ -14,12 +14,13 @@ export const createKafkaProvider = (): Provider => ({
             brokers: [`${envConfig().kafka.host}:${envConfig().kafka.port}`],
             clientId: clientId ?? v4(),
             logLevel: logLevel.NOTHING,
+            ssl: false,
             sasl: envConfig().kafka.sasl.enabled
                 ? {
-                    mechanism: "plain",
-                    username: envConfig().kafka.sasl.username,
-                    password: envConfig().kafka.sasl.password,
-                }
+                      mechanism: "plain",
+                      username: envConfig().kafka.sasl.username,
+                      password: envConfig().kafka.sasl.password,
+                  }
                 : undefined,
         })
     },
