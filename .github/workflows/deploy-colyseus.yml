@@ -24,33 +24,33 @@ jobs:
 
             - name: Build and run Docker Compose
               env:
+                  # ====== Non-sensitive config (Vars) ======
                   NODE_ENV: ${{ vars.NODE_ENV }}
                   PORT: ${{ vars.PORT }}
                   COLYSEUS_PORT: ${{ vars.COLYSEUS_PORT }}
                   MONGODB_GAME_HOST: ${{ vars.MONGODB_GAME_HOST }}
                   MONGODB_GAME_PORT: ${{ vars.MONGODB_GAME_PORT }}
                   MONGODB_GAME_DATABASE: ${{ vars.MONGODB_GAME_DATABASE }}
-                  REDIS_COLYSEUS_HOST: ${{ vars.REDIS_COLYSEUS_HOST }}
                   REDIS_COLYSEUS_PORT: ${{ vars.REDIS_COLYSEUS_PORT }}
                   REDIS_COLYSEUS_REQUIRE_PASSWORD: ${{ vars.REDIS_COLYSEUS_REQUIRE_PASSWORD }}
-                  REDIS_THROTTLER_HOST: ${{ vars.REDIS_THROTTLER_HOST }}
                   REDIS_THROTTLER_PORT: ${{ vars.REDIS_THROTTLER_PORT }}
                   REDIS_THROTTLER_REQUIRE_PASSWORD: ${{ vars.REDIS_THROTTLER_REQUIRE_PASSWORD }}
-                  REDIS_CACHE_HOST: ${{ vars.REDIS_CACHE_HOST }}
                   REDIS_CACHE_PORT: ${{ vars.REDIS_CACHE_PORT }}
                   REDIS_CACHE_REQUIRE_PASSWORD: ${{ vars.REDIS_CACHE_REQUIRE_PASSWORD }}
-                  REDIS_CACHE_TTL: ${{ vars.REDIS_CACHE_TTL }}
-                  AUTH_SIGNATURE_DURATION: ${{ vars.AUTH_SIGNATURE_DURATION }}
                   JWT_REFRESH_TOKEN_EXPIRATION: ${{ vars.JWT_REFRESH_TOKEN_EXPIRATION }}
                   JWT_ACCESS_TOKEN_EXPIRATION: ${{ vars.JWT_ACCESS_TOKEN_EXPIRATION }}
+                  SENTRY_TRACES_SAMPLE_RATE: ${{ vars.SENTRY_TRACES_SAMPLE_RATE }}
                   LOKI_HOST: ${{ vars.LOKI_HOST }}
+                  REDIS_COLYSEUS_HOST: ${{ vars.REDIS_COLYSEUS_HOST }}
+                  REDIS_THROTTLER_HOST: ${{ vars.REDIS_THROTTLER_HOST }}
+                  REDIS_CACHE_HOST: ${{ vars.REDIS_CACHE_HOST }}
                   KAFKA_HOST: ${{ vars.KAFKA_HOST }}
                   KAFKA_PORT: ${{ vars.KAFKA_PORT }}
-                  KAFKA_CLIENT_ID: ${{ vars.KAFKA_CLIENT_ID }}
+
+                  # ====== Sensitive config (Secrets) ======
+                  KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
+                  KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
                   KAFKA_SASL_MECHANISM: ${{ secrets.KAFKA_SASL_MECHANISM }}
-                  KAFKA_SASL_ENABLED: ${{ vars.KAFKA_SASL_ENABLED }}
-                  BULLMQ_COMPLETED_JOB_COUNT: ${{ vars.BULLMQ_COMPLETED_JOB_COUNT }}
-                  BULLMQ_FAILED_JOB_COUNT: ${{ vars.BULLMQ_FAILED_JOB_COUNT }}
                   MONGODB_GAME_USERNAME: ${{ secrets.MONGODB_GAME_USERNAME }}
                   MONGODB_GAME_PASSWORD: ${{ secrets.MONGODB_GAME_PASSWORD }}
                   REDIS_COLYSEUS_USERNAME: ${{ secrets.REDIS_COLYSEUS_USERNAME }}
@@ -60,20 +60,17 @@ jobs:
                   REDIS_CACHE_USERNAME: ${{ secrets.REDIS_CACHE_USERNAME }}
                   REDIS_CACHE_PASSWORD: ${{ secrets.REDIS_CACHE_PASSWORD }}
                   JWT_SECRET: ${{ secrets.JWT_SECRET }}
-                  COLYSEUS_ADMIN_USERNAME: ${{ secrets.COLYSEUS_ADMIN_USERNAME }}
-                  COLYSEUS_ADMIN_PASSWORD: ${{ secrets.COLYSEUS_ADMIN_PASSWORD }}
-                  GRAPHQL_ADMIN_USERNAME: ${{ secrets.GRAPHQL_ADMIN_USERNAME }}
-                  GRAPHQL_ADMIN_PASSWORD: ${{ secrets.GRAPHQL_ADMIN_PASSWORD }}
-                  KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
-                  KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
+                  SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
                   LOKI_USERNAME: ${{ secrets.LOKI_USERNAME }}
                   LOKI_PASSWORD: ${{ secrets.LOKI_PASSWORD }}
+                  GRAPHQL_ADMIN_USERNAME: ${{ secrets.GRAPHQL_ADMIN_USERNAME }}
+                  GRAPHQL_ADMIN_PASSWORD: ${{ secrets.GRAPHQL_ADMIN_PASSWORD }}
+                  COLYSEUS_ADMIN_USERNAME: ${{ secrets.COLYSEUS_ADMIN_USERNAME }}
+                  COLYSEUS_ADMIN_PASSWORD: ${{ secrets.COLYSEUS_ADMIN_PASSWORD }}
               run: |
                   cd apps/nomas-colyseus
                   docker compose down --remove-orphans
                   docker compose up -d --build
 
-            - name: Check service status
-              run: |
-                  cd apps/nomas-colyseus
-                  docker compose ps
+            - name: List running containers
+              run: docker ps
