@@ -21,7 +21,7 @@ export class PetIncomeService implements OnModuleInit {
     private async initializeCreateIncomeJobs() {
         try {
             await this.addCreateIncomePetJob()
-            this.logger.log(`Initialized create income pets jobs`)
+            this.logger.debug("Initialized create income pets jobs")
         } catch (error) {
             this.logger.error("Failed to initialize create income jobs", error)
         }
@@ -30,12 +30,10 @@ export class PetIncomeService implements OnModuleInit {
     async addCreateIncomePetJob() {
         try {
             const jobId = JOB_ID.CREATE_INCOME
-            const existingJob = (await this.createIncomeQueue.getJob(jobId)) as
-                | Job<PetIncomeJobData>
-                | undefined
+            const existingJob = (await this.createIncomeQueue.getJob(jobId)) as Job<PetIncomeJobData> | undefined
 
             if (existingJob) {
-                this.logger.debug(`Create income pet job already exists`)
+                this.logger.debug("Create income pet job already exists")
                 return
             }
 
@@ -54,7 +52,7 @@ export class PetIncomeService implements OnModuleInit {
                 },
             )
 
-            this.logger.log(`Added create income job`)
+            this.logger.debug("Added create income job")
         } catch (error) {
             this.logger.error("Failed to add create income pet job", error)
         }
@@ -68,9 +66,9 @@ export class PetIncomeService implements OnModuleInit {
                 // Update every 1 minute
                 every: 1000 * 60,
             })
-            this.logger.log(`Removed create income job`)
+            this.logger.debug("Removed create income job")
         } catch (error) {
-            this.logger.error(`Failed to remove create income job`, error)
+            this.logger.error("Failed to remove create income job", error)
             throw error
         }
     }
@@ -81,4 +79,3 @@ export class PetIncomeService implements OnModuleInit {
         return job ? await job.getState() : null
     }
 }
-

@@ -18,7 +18,7 @@ export class PetEvolutionProcessor extends WorkerHost {
 
     async process(job: Job) {
         try {
-            this.logger.log(`Processing job ${job.id}`)
+            this.logger.debug(`Processing job ${job.id}`)
 
             const pets = await this.petService.findPetYoungPets()
 
@@ -32,7 +32,7 @@ export class PetEvolutionProcessor extends WorkerHost {
                 const petType = ownedPet.type as PetSchema
 
                 if (!petType) {
-                    this.logger.warn(`Pet ${petId} has no type populated`)
+                    this.logger.debug(`Pet ${petId} has no type populated`)
                     continue
                 }
 
@@ -42,11 +42,11 @@ export class PetEvolutionProcessor extends WorkerHost {
                 // Check if pet should evolve to adult
                 if (differenceInMinutes >= petType.timeNatural) {
                     await this.petService.updatePetAdult(petId)
-                    this.logger.log(`Pet ${petId} evolved to adult`)
+                    this.logger.debug(`Pet ${petId} evolved to adult`)
                 }
             }
 
-            this.logger.log(`Successfully processed job ${job.id}`)
+            this.logger.debug(`Successfully processed job ${job.id}`)
             return pets
         } catch (error) {
             this.logger.error(

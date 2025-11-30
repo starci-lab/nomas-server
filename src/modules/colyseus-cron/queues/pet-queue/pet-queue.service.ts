@@ -21,7 +21,7 @@ export class PetQueueService implements OnModuleInit {
     private async initializeUpdateStatsJobs() {
         try {
             await this.addUpdateStatsJob()
-            this.logger.log(`Initialized update stats pets jobs`)
+            this.logger.debug("Initialized update stats pets jobs")
         } catch (error) {
             this.logger.error("Failed to initialize update stats jobs", error)
         }
@@ -35,7 +35,7 @@ export class PetQueueService implements OnModuleInit {
             const existingJob = (await this.petQueue.getJob(jobId)) as Job<PetStatsJobData> | undefined
 
             if (existingJob) {
-                this.logger.debug(`Update stats job already exists`)
+                this.logger.debug("Update stats job already exists")
                 return
             }
 
@@ -54,9 +54,9 @@ export class PetQueueService implements OnModuleInit {
                 },
             )
 
-            this.logger.log(`Added update stats job`)
+            this.logger.debug("Added update stats job")
         } catch (error) {
-            this.logger.error(`Failed to add update stats job`, error)
+            this.logger.error("Failed to add update stats job", error)
             throw error
         }
     }
@@ -69,9 +69,9 @@ export class PetQueueService implements OnModuleInit {
                 // Update every 2 minutes
                 every: 60 * 1000 * 2,
             })
-            this.logger.log(`Removed update stats job`)
+            this.logger.debug("Removed update stats job")
         } catch (error) {
-            this.logger.error(`Failed to remove update stats job`, error)
+            this.logger.error("Failed to remove update stats job", error)
             throw error
         }
     }
@@ -83,4 +83,3 @@ export class PetQueueService implements OnModuleInit {
         return job ? await job.getState() : null
     }
 }
-

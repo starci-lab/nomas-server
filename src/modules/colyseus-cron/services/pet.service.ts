@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { Injectable } from "@nestjs/common"
 import { InjectModel } from "@nestjs/mongoose"
 import { Model } from "mongoose"
 import { OwnedPetSchema, PetSchema } from "@modules/databases/mongodb/game"
@@ -11,8 +11,6 @@ import { GAME_MONGOOSE_CONNECTION_NAME } from "@modules/databases/mongodb/game/c
  */
 @Injectable()
 export class PetService {
-    private readonly logger = new Logger(PetService.name)
-
     constructor(
         @InjectModel(OwnedPetSchema.name, GAME_MONGOOSE_CONNECTION_NAME)
         private ownedPetModel: Model<OwnedPetSchema>,
@@ -24,11 +22,7 @@ export class PetService {
      * Find all active pets
      */
     async findActivePets() {
-        return this.ownedPetModel
-            .find({ status: PetStatus.Active })
-            .populate("type")
-            .populate("user")
-            .exec()
+        return this.ownedPetModel.find({ status: PetStatus.Active }).populate("type").populate("user").exec()
     }
 
     /**
@@ -42,41 +36,39 @@ export class PetService {
      * Find pets that can generate income
      */
     async findPetPosibleIncome() {
-        const pets = await this.ownedPetModel
-            .find({ isAdult: true })
-            .populate("type")
-            .exec()
+        const pets = await this.ownedPetModel.find({ isAdult: true }).populate("type").exec()
 
         return pets.filter((pet) => {
             const petType = pet.type as PetSchema
             if (!petType) return false
 
-            return (
-                pet.tokenIncome < petType.maxIncomePerClaim &&
-                pet.totalIncome < petType.maxIncome
-            )
+            return pet.tokenIncome < petType.maxIncomePerClaim && pet.totalIncome < petType.maxIncome
         })
     }
 
     /**
      * Update pet stats
      */
-    async updateStats(petId: string, petStats: {
-        hunger?: number
-        happiness?: number
-        cleanliness?: number
-        lastUpdateHunger?: Date
-        lastUpdateHappiness?: Date
-        lastUpdateCleanliness?: Date
-    }) {
-        const updateData: any = {}
-        
+    async updateStats(
+        petId: string,
+        petStats: {
+            hunger?: number
+            happiness?: number
+            cleanliness?: number
+            lastUpdateHunger?: Date
+            lastUpdateHappiness?: Date
+            lastUpdateCleanliness?: Date
+        },
+    ) {
+        const updateData: Record<string, unknown> = {}
+
         if (petStats.hunger !== undefined) updateData.hunger = petStats.hunger
         if (petStats.happiness !== undefined) updateData.happiness = petStats.happiness
         if (petStats.cleanliness !== undefined) updateData.cleanliness = petStats.cleanliness
         if (petStats.lastUpdateHunger !== undefined) updateData.lastUpdateHunger = petStats.lastUpdateHunger
         if (petStats.lastUpdateHappiness !== undefined) updateData.lastUpdateHappiness = petStats.lastUpdateHappiness
-        if (petStats.lastUpdateCleanliness !== undefined) updateData.lastUpdateCleanliness = petStats.lastUpdateCleanliness
+        if (petStats.lastUpdateCleanliness !== undefined)
+            updateData.lastUpdateCleanliness = petStats.lastUpdateCleanliness
 
         return this.ownedPetModel.findByIdAndUpdate(petId, updateData, { new: true }).exec()
     }
@@ -90,4 +82,3 @@ export class PetService {
             .exec()
     }
 }
-

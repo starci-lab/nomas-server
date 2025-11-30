@@ -17,11 +17,11 @@ export class PetProcessor extends WorkerHost {
 
     async process(job: Job) {
         try {
-            this.logger.log(`Processing job ${job.id}`)
+            this.logger.debug(`Processing job ${job.id}`)
 
             const pets = await this.petService.findActivePets()
             if (!pets || pets.length === 0) {
-                this.logger.warn("No active pets found")
+                this.logger.debug("No active pets found")
                 return []
             }
 
@@ -46,7 +46,7 @@ export class PetProcessor extends WorkerHost {
                 await this.petService.updateStats(petId, newPetStats)
             }
 
-            this.logger.log(`Successfully processed job ${job.id}`)
+            this.logger.debug(`Successfully processed job ${job.id}`)
             return pets
         } catch (error) {
             this.logger.error(

@@ -18,7 +18,7 @@ export class PetIncomeProcessor extends WorkerHost {
 
     async process(job: Job) {
         try {
-            this.logger.log(`Processing job ${job.id}`)
+            this.logger.debug(`Processing job ${job.id}`)
 
             const pets = await this.petService.findPetPosibleIncome()
 
@@ -32,7 +32,7 @@ export class PetIncomeProcessor extends WorkerHost {
                 const petType = ownedPet.type as PetSchema
 
                 if (!petType) {
-                    this.logger.warn(`Pet ${petId} has no type populated`)
+                    this.logger.debug(`Pet ${petId} has no type populated`)
                     continue
                 }
 
@@ -56,13 +56,13 @@ export class PetIncomeProcessor extends WorkerHost {
 
                     await ownedPet.save()
 
-                    this.logger.log(
+                    this.logger.debug(
                         `Pet ${petId} earned ${incomeCal} tokens. Total: ${ownedPet.tokenIncome}/${petType.maxIncomePerClaim}`,
                     )
                 }
             }
 
-            this.logger.log(`Successfully processed job ${job.id}`)
+            this.logger.debug(`Successfully processed job ${job.id}`)
             return pets
         } catch (error) {
             this.logger.error(

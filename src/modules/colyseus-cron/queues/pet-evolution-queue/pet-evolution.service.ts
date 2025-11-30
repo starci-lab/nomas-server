@@ -21,7 +21,7 @@ export class PetEvolutionService implements OnModuleInit {
     private async initializeUpdateEvolutionJobs() {
         try {
             await this.addUpdateEvolutionPetJobs()
-            this.logger.log(`Initialized update evolution pets jobs`)
+            this.logger.debug("Initialized update evolution pets jobs")
         } catch (error) {
             this.logger.error("Failed to initialize update evolution jobs", error)
         }
@@ -31,12 +31,10 @@ export class PetEvolutionService implements OnModuleInit {
         try {
             const jobId = JOB_ID.UPDATE_EVOLUTION
             // Check if job already exists
-            const existingJob = (await this.petEvolutionQueue.getJob(jobId)) as
-                | Job<PetEvolutionJobData>
-                | undefined
+            const existingJob = (await this.petEvolutionQueue.getJob(jobId)) as Job<PetEvolutionJobData> | undefined
 
             if (existingJob) {
-                this.logger.debug(`Update evolution job already exists`)
+                this.logger.debug("Update evolution job already exists")
                 return
             }
 
@@ -55,7 +53,7 @@ export class PetEvolutionService implements OnModuleInit {
                 },
             )
 
-            this.logger.log(`Added update evolution job`)
+            this.logger.debug("Added update evolution job")
         } catch (error) {
             this.logger.error("Failed to add update evolution job", error)
         }
@@ -69,9 +67,9 @@ export class PetEvolutionService implements OnModuleInit {
                 // Update every 1 minute
                 every: 1000 * 60,
             })
-            this.logger.log(`Removed update evolution job`)
+            this.logger.debug("Removed update evolution job")
         } catch (error) {
-            this.logger.error(`Failed to remove update evolution job`, error)
+            this.logger.error("Failed to remove update evolution job", error)
             throw error
         }
     }
@@ -83,4 +81,3 @@ export class PetEvolutionService implements OnModuleInit {
         return job ? await job.getState() : null
     }
 }
-

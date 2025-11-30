@@ -11,22 +11,21 @@ export class PetEvolutionQueueEvents extends QueueEventsHost {
 
     @OnQueueEvent("added")
     onAdded(job: { jobId: string; name: string }) {
-        this.logger.log(`Job ${job.jobId} of type ${job.name} has been added to the queue`)
+        this.logger.debug(`Job ${job.jobId} of type ${job.name} has been added to the queue`)
     }
 
     @OnQueueEvent("waiting")
     onWaiting(job: { jobId: string; prev?: string }) {
-        this.logger.log(`Job ${job.jobId} is waiting`)
+        this.logger.debug(`Job ${job.jobId} is waiting`)
     }
 
     @OnQueueEvent("completed")
     onCompleted(job: { jobId: string }) {
-        this.logger.log(`Job ${job.jobId} has been completed`)
+        this.logger.debug(`Job ${job.jobId} has been completed`)
     }
 
     @OnQueueEvent("failed")
     onFailed(job: { jobId: string; failedReason: string }) {
-        this.logger.error(`Job ${job.jobId} has failed: ${job.failedReason}`)
+        this.logger.error(`Job ${job.jobId} has failed: ${job.failedReason}`, job.failedReason)
     }
 }
-
