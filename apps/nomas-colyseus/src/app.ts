@@ -16,6 +16,7 @@ import { TestController } from "./test.controller"
 import { PrometheusModule } from "@modules/prometheus/prometheus.module"
 import { CacheModule } from "@modules/cache"
 import { JwtModule } from "@modules/jwt"
+import { ColyseusCronModule } from "@modules/colyseus-cron"
 
 @Module({
     imports: [
@@ -74,6 +75,9 @@ import { JwtModule } from "@modules/jwt"
             defaultMetrics: {
                 enabled: true,
             },
+        }),
+        ColyseusCronModule.register({
+            isGlobal: true,
         }),
     ],
     controllers: [TestController],

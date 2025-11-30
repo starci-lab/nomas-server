@@ -103,7 +103,7 @@ export class PetHandler {
             }
 
             const petId = (newOwnedPet._id as ObjectId).toString()
-            const stateRoom = payload.room as StateRoom
+            const stateRoom = payload.room as unknown as StateRoom
 
             // Create pet using state management method
             const newPet = stateRoom.createPetState(petId, player.walletAddress || payload.sessionId, payload.petType)
