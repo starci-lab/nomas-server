@@ -1,50 +1,56 @@
 FROM node:23-alpine AS builder
 
+#  Step 1: Builder
 WORKDIR /app
 
-# Copy package files first for better layer caching
-COPY package*.json ./
-COPY nest-cli.json ./
-COPY tsconfig*.json ./
+# Copy package.json and package-lock.json from the root directory (important for npm ci)
+# This assumes the build context is the root directory of the repository.
+COPY package.json package-lock.json ./
 
-# Install all dependencies (including devDependencies for build)
+# Copy the configuration files of the sub-application from the relative path
+COPY apps/nomas-colyseus/nest-cli.json ./
+COPY apps/nomas-colyseus/tsconfig*.json ./
+
+# Install all dependencies (including devDependencies for building)
 RUN npm ci
 
-# Copy source code
+# Copy the entire source code of the project
 COPY . .
 
-# Build with production environment
+# Run the build command for the nomas-colyseus application
 ENV NODE_ENV=production
 RUN npm run build:prod:nomas-colyseus
 
-# Production stage
+# Step 2: Production (Final image, small and light)
 FROM node:23-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json and package-lock.json (only for production deps)
+COPY package.json package-lock.json ./
 
-# Install production dependencies + cross-env (needed for start:prod script)
+# Install the dependencies for the production environment and the necessary packages
 RUN npm ci --only=production && \
     npm install cross-env --save-prod && \
     npm cache clean --force
 
-# Copy built application from builder
+# Copy the built application (dist) from the builder step
 COPY --from=builder /app/dist ./dist
 
-# Create non-root user
+# Create a non-root user (not root) to enhance security
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
+    adduser -S nodejs -u 1001 -G nodejs && \
     chown -R nodejs:nodejs /app
 
+# Switch to the non-root user
 USER nodejs
 
-# Set production environment
+# Set the production environment
 ENV NODE_ENV=production
 
-EXPOSE 3000
+# Open the port for the Colyseus application
+EXPOSE 3002 2567
 
-# Start application using npm script from package.json
+
+# Command to start the application
 CMD ["npm", "run", "start:prod:nomas-colyseus"]
-
