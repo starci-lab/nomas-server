@@ -61,11 +61,11 @@ export const envConfig = () => ({
             mechanism: process.env.KAFKA_SASL_MECHANISM || ("plain" as "plain" | "scram-sha-256"),
             username: process.env.KAFKA_SASL_USERNAME || "kafka",
             password: process.env.KAFKA_SASL_PASSWORD || "Cuong123_A",
-            enabled: process.env.KAFKA_SASL_ENABLED === "true",
+            enabled: "true",
         },
     },
     isProduction: process.env.NODE_ENV === "production",
-    // mock private keys for testing
+    // mock private keys for testing''
     mockPrivateKeys: {
         [Platform.Evm]:
             process.env.MOCK_PRIVATE_KEY_EVM || "b243401a4c59ba95ec01939edbf269e6d78f1c5ac55e7a704705761ca6c56448",
