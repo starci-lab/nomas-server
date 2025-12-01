@@ -3,7 +3,7 @@ import { Platform } from "@typedefs"
 export const envConfig = () => ({
     mongodb: {
         game: {
-            host: process.env.MONGODB_GAME_HOST || "localhost",
+            host: process.env.MONGODB_GAME_HOST || "mongo",
             port: process.env.MONGODB_GAME_PORT || 27018,
             database: process.env.MONGODB_GAME_DATABASE || "game",
             username: process.env.MONGODB_GAME_USERNAME || "root",
@@ -12,7 +12,7 @@ export const envConfig = () => ({
     },
     redis: {
         colyseus: {
-            host: process.env.REDIS_COLYSEUS_HOST || "localhost",
+            host: process.env.REDIS_COLYSEUS_HOST || "redis-cifarm",
             port: process.env.REDIS_COLYSEUS_PORT ? Number.parseInt(process.env.REDIS_COLYSEUS_PORT) : 6379,
             username: process.env.REDIS_COLYSEUS_USERNAME || "default",
             password: process.env.REDIS_COLYSEUS_PASSWORD || "Cuong123_A",
@@ -21,14 +21,14 @@ export const envConfig = () => ({
             adminPassword: process.env.COLYSEUS_ADMIN_PASSWORD || "admin",
         },
         throttler: {
-            host: process.env.REDIS_THROTTLER_HOST || "localhost",
+            host: process.env.REDIS_THROTTLER_HOST || "redis-cifarm",
             port: process.env.REDIS_THROTTLER_PORT ? Number.parseInt(process.env.REDIS_THROTTLER_PORT) : 6379,
             username: process.env.REDIS_THROTTLER_USERNAME || "default",
             password: process.env.REDIS_THROTTLER_PASSWORD || "Cuong123_A",
             requirePassword: process.env.REDIS_THROTTLER_REQUIRE_PASSWORD === "true",
         },
         cache: {
-            host: process.env.REDIS_CACHE_HOST || "localhost",
+            host: process.env.REDIS_CACHE_HOST || "redis-cifarm",
             port: process.env.REDIS_CACHE_PORT ? Number.parseInt(process.env.REDIS_CACHE_PORT) : 6379,
             username: process.env.REDIS_CACHE_USERNAME || "default",
             password: process.env.REDIS_CACHE_PASSWORD || "Cuong123_A",
@@ -84,7 +84,7 @@ export const envConfig = () => ({
         },
     },
     loki: {
-        host: process.env.LOKI_HOST || "http://localhost:3100",
+        host: process.env.LOKI_HOST || "http://loki:3100",
         requireAuth: false,
         username: process.env.LOKI_USERNAME || "admin",
         password: process.env.LOKI_PASSWORD || "admin",
