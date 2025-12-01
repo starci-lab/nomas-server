@@ -44,3 +44,6 @@ services:
             - COLYSEUS_ADMIN_USERNAME=${COLYSEUS_ADMIN_USERNAME}
             - COLYSEUS_ADMIN_PASSWORD=${COLYSEUS_ADMIN_PASSWORD}
         restart: unless-stopped
+networks:
+    nomas-network:
+        external: true
