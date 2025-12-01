@@ -4,7 +4,7 @@ export const envConfig = () => ({
     mongodb: {
         game: {
             host: process.env.MONGODB_GAME_HOST || "mongo",
-            port: process.env.MONGODB_GAME_PORT || 27018,
+            port: process.env.MONGODB_GAME_PORT || 27017,
             database: process.env.MONGODB_GAME_DATABASE || "game",
             username: process.env.MONGODB_GAME_USERNAME || "root",
             password: process.env.MONGODB_GAME_PASSWORD || "Cuong123_A",
