@@ -28,15 +28,16 @@ export class GameMongooseModule extends ConfigurableModuleClass {
     public static forRoot(options: typeof OPTIONS_TYPE = {}): DynamicModule {
         const { withSeeder, manualTrigger, loadToMemory, isGlobal } = options
         const dynamicModule = super.forRoot(options)
-        const { database, username, password, host, port } = envConfig().mongodb.game
-        const url = `mongodb://${username}:${password}@${host}:${port}`
+        const { database, host, port } = envConfig().mongodb.game
+        const url = `mongodb://localhost:27018/game?authSource=admin&directConnection=true`
+        // const url = `mongodb://${username}:${password}@${host}:${port}`
 
         const imports = [
             NestMongooseModule.forRoot(url, {
                 retryWrites: true,
                 retryReads: true,
-                authSource: "admin",
-                dbName: database,
+                // authSource: "admin",
+                // dbName: database,
                 connectionName: GAME_MONGOOSE_CONNECTION_NAME,
             }),
             this.forFeature(),
