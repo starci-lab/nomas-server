@@ -14,7 +14,12 @@ import {
 } from "@modules/colyseus/events"
 import { Client } from "colyseus"
 import { GamePetEvent, GameFoodEvent, GameInventoryEvent, GamePlayerEvent } from "@modules/colyseus/events"
-import { BuyPetPayload, BuyPetResponsePayload } from "@modules/colyseus/handlers/pet/types"
+import {
+    BuyPetPayload,
+    BuyPetResponsePayload,
+    CreatePoopPayload,
+    CreatePoopResponsePayload,
+} from "@modules/colyseus/handlers/pet/types"
 import { PetHandler } from "@modules/colyseus/handlers/pet"
 import {
     PurchaseFoodPayload,
@@ -52,13 +57,13 @@ import {
 } from "@modules/colyseus/handlers/player/types"
 import { PlayerHandler } from "@modules/colyseus/handlers/player"
 import type { GameRoom } from "../game"
-import { AbstractStateManagementGameRoom } from "@modules/colyseus/rooms/game/state-management.room"
+import { AbstractPetStateGameRoom } from "./state-pet.room"
 
 export interface RegisterHandler {
     messageType: GameActionReceiveMessage
     handler: (client: Client, data: unknown) => void | Promise<void>
 }
-export abstract class AbstractReceiverGameRoom extends AbstractStateManagementGameRoom {
+export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom {
     protected petHandler: PetHandler | null = null
     protected foodHandler: FoodHandler | null = null
     protected inventoryHandler: InventoryHandler | null = null
@@ -167,6 +172,30 @@ export abstract class AbstractReceiverGameRoom extends AbstractStateManagementGa
                     result,
                 }
                 this.eventEmitter.emit(GameFoodEvent.GetInventoryResponse, responsePayload)
+            },
+        },
+        {
+            messageType: GameActionReceiveMessage.CreatePoop,
+            handler: async (client: Client, data: any) => {
+                if (!this.petHandler) {
+                    this.logger.error("PetHandler not initialized")
+                    return
+                }
+                const payload: CreatePoopPayload = {
+                    room: this as unknown as GameRoom,
+                    client,
+                    sessionId: client.sessionId,
+                    petId: data.petId,
+                    positionX: data.positionX,
+                    positionY: data.positionY,
+                }
+                const result = await this.petHandler.handleCreatePoop(payload)
+                const responsePayload: CreatePoopResponsePayload = {
+                    client,
+                    sessionId: client.sessionId,
+                    result,
+                }
+                this.eventEmitter.emit(GamePetEvent.CreatePoopResponse, responsePayload)
             },
         },
         {

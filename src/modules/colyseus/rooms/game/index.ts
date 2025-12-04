@@ -7,10 +7,13 @@ import { GAME_ROOM_MAX_CLIENTS } from "./constanst"
 import { GAME_ROOM_RECONNECTION_TIME } from "./constanst"
 import { PrometheusService } from "@modules/prometheus/providers/prometheus.service"
 import { JwtEphemeralService } from "@modules/jwt"
+import { PlayerHandler } from "@modules/colyseus/handlers"
 
 export class GameRoom extends AbstractSenderGameRoom {
     maxClients = GAME_ROOM_MAX_CLIENTS
     private static jwtService: JwtEphemeralService | null = null
+
+    private playerHandler: PlayerHandler | null = null
 
     // Getter method to lazy initialize
     private static getJwtService(): JwtEphemeralService {
@@ -65,7 +68,20 @@ export class GameRoom extends AbstractSenderGameRoom {
         this.state.players.set(client.sessionId, player)
         this.state.playerCount = this.state.players.size
 
-        this.registerPlayerPets(player)
+        if (this.playerHandler) {
+            const result = await this.playerHandler.handleGetPetsState({
+                room: this,
+                client,
+                sessionId: client.sessionId,
+                data: {},
+            })
+
+            if (result.success) {
+                this.logger.debug(`Loaded ${result.data?.pets?.length || 0} pets on join`)
+            }
+        }
+
+        // this.registerPlayerPets(player)
         this.sendWelcomeMessage(client, player)
         this.logger.debug(
             `Player joined: ${player.walletAddress} (${client.sessionId}). Total players: ${this.state.playerCount}`,
@@ -131,6 +147,7 @@ export class GameRoom extends AbstractSenderGameRoom {
         // Initialize base room dependencies (eventEmitter, dayjsService, retryService)
         this.initialize()
         this.retryService = this.app.get(RetryService, { strict: false })
+        this.playerHandler = this.app.get(PlayerHandler, { strict: false })
     }
 
     // initialize room state

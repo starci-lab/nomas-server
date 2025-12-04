@@ -15,7 +15,11 @@ import {
     UpdateSettingsResult,
     UpdateTutorialResult,
 } from "./types"
-import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { GameRoomColyseusSchema, PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { PetSyncService } from "../pet/pet-sync.service"
+import { AbstractPetStateGameRoom } from "@modules/colyseus/rooms/game/state-pet.room"
+import { ObjectId } from "mongoose"
+import { PetSchema } from "@modules/databases"
 
 /**
  * Player Handler - Pure business logic layer
@@ -24,9 +28,10 @@ import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/
 @Injectable()
 export class PlayerHandler {
     private readonly logger = new Logger(PlayerHandler.name)
+    constructor(private readonly petSyncService: PetSyncService) {}
 
     async handleGetGameConfig(payload: GetGameConfigPayload): Promise<GetGameConfigResult> {
-        this.logger.debug("Handling get game config")
+        this.logger.debug("Handling get game config", { payload })
         try {
             // TODO: Implement get game config logic
             this.logger.warn("Get game config not yet implemented")
@@ -120,13 +125,43 @@ export class PlayerHandler {
                 }
             }
 
-            // TODO: Implement get pets state logic
-            this.logger.warn("Get pets state not yet implemented")
+            // 1. Load pets from DB
+            const stateRoom = payload.room as unknown as AbstractPetStateGameRoom
+            const dbPets = await this.petSyncService.loadOwnerPetsFromDB(player)
+            this.logger.debug(`Loaded ${dbPets.length} pets from DB`)
+
+            if (dbPets.length === 0) {
+                return {
+                    success: true,
+                    message: "No pets found",
+                    data: { pets: [] },
+                    player,
+                }
+            }
+
+            dbPets.forEach((pet) => {
+                const petSchema = new PetColyseusSchema()
+                petSchema.id = (pet._id as ObjectId).toString()
+                petSchema.ownerId = player.sessionId
+                petSchema.petType = (pet.type as PetSchema).displayId
+                petSchema.lastUpdated = Date.now()
+                petSchema.birthTime = new Date(pet.createdAt).toISOString()
+                petSchema.hunger = pet.hunger
+                petSchema.happiness = pet.happiness
+                petSchema.cleanliness = pet.cleanliness
+                petSchema.lastUpdateHappiness = (pet.lastUpdateHappiness as Date).toISOString()
+                petSchema.lastUpdateHunger = (pet.lastUpdateHunger as Date).toISOString()
+                petSchema.lastUpdateCleanliness = (pet.lastUpdateCleanliness as Date).toISOString()
+                petSchema.isAdult = pet.isAdult
+                petSchema.lastClaim = (pet.lastClaim as Date).toISOString()
+
+                stateRoom.addPetToState(petSchema, player)
+            })
 
             return {
                 success: true,
-                message: "Get pets state (placeholder)",
-                data: { pets: [] },
+                message: `Loaded ${dbPets.length} pets`,
+                data: { pets: dbPets },
                 player,
             }
         } catch (error) {
@@ -237,4 +272,3 @@ export class PlayerHandler {
         return state.players.get(sessionId)
     }
 }
-
