@@ -3,8 +3,8 @@ import { Platform } from "@typedefs"
 export const envConfig = () => ({
     mongodb: {
         game: {
-            host: process.env.MONGODB_GAME_HOST || "localhost",
-            port: process.env.MONGODB_GAME_PORT || 27018,
+            host: process.env.MONGODB_GAME_HOST || "mongo",
+            port: process.env.MONGODB_GAME_PORT || 27017,
             database: process.env.MONGODB_GAME_DATABASE || "game",
             username: process.env.MONGODB_GAME_USERNAME || "root",
             password: process.env.MONGODB_GAME_PASSWORD || "Cuong123_A",
@@ -12,7 +12,7 @@ export const envConfig = () => ({
     },
     redis: {
         colyseus: {
-            host: process.env.REDIS_COLYSEUS_HOST || "localhost",
+            host: process.env.REDIS_COLYSEUS_HOST || "redis-cifarm",
             port: process.env.REDIS_COLYSEUS_PORT ? Number.parseInt(process.env.REDIS_COLYSEUS_PORT) : 6379,
             username: process.env.REDIS_COLYSEUS_USERNAME || "default",
             password: process.env.REDIS_COLYSEUS_PASSWORD || "Cuong123_A",
@@ -21,14 +21,14 @@ export const envConfig = () => ({
             adminPassword: process.env.COLYSEUS_ADMIN_PASSWORD || "admin",
         },
         throttler: {
-            host: process.env.REDIS_THROTTLER_HOST || "localhost",
+            host: process.env.REDIS_THROTTLER_HOST || "redis-cifarm",
             port: process.env.REDIS_THROTTLER_PORT ? Number.parseInt(process.env.REDIS_THROTTLER_PORT) : 6379,
             username: process.env.REDIS_THROTTLER_USERNAME || "default",
             password: process.env.REDIS_THROTTLER_PASSWORD || "Cuong123_A",
             requirePassword: process.env.REDIS_THROTTLER_REQUIRE_PASSWORD === "true",
         },
         cache: {
-            host: process.env.REDIS_CACHE_HOST || "localhost",
+            host: process.env.REDIS_CACHE_HOST || "redis-cifarm",
             port: process.env.REDIS_CACHE_PORT ? Number.parseInt(process.env.REDIS_CACHE_PORT) : 6379,
             username: process.env.REDIS_CACHE_USERNAME || "default",
             password: process.env.REDIS_CACHE_PASSWORD || "Cuong123_A",
@@ -54,18 +54,18 @@ export const envConfig = () => ({
         colyseus: process.env.COLYSEUS_PORT ? Number.parseInt(process.env.COLYSEUS_PORT) : 2567,
     },
     kafka: {
-        host: process.env.KAFKA_HOST || "172.17.0.1",
+        host: process.env.KAFKA_HOST || "kafka-cifarm-kafka-1",
         port: process.env.KAFKA_PORT ? Number.parseInt(process.env.KAFKA_PORT) : 9092,
         clientId: process.env.KAFKA_CLIENT_ID || "kafka",
         sasl: {
             mechanism: process.env.KAFKA_SASL_MECHANISM || ("plain" as "plain" | "scram-sha-256"),
             username: process.env.KAFKA_SASL_USERNAME || "kafka",
             password: process.env.KAFKA_SASL_PASSWORD || "Cuong123_A",
-            enabled: process.env.KAFKA_SASL_ENABLED === "true",
+            enabled: "true",
         },
     },
     isProduction: process.env.NODE_ENV === "production",
-    // mock private keys for testing
+    // mock private keys for testing''
     mockPrivateKeys: {
         [Platform.Evm]:
             process.env.MOCK_PRIVATE_KEY_EVM || "b243401a4c59ba95ec01939edbf269e6d78f1c5ac55e7a704705761ca6c56448",
@@ -84,7 +84,7 @@ export const envConfig = () => ({
         },
     },
     loki: {
-        host: process.env.LOKI_HOST || "http://localhost:3100",
+        host: process.env.LOKI_HOST || "http://loki:3100",
         requireAuth: false,
         username: process.env.LOKI_USERNAME || "admin",
         password: process.env.LOKI_PASSWORD || "admin",
