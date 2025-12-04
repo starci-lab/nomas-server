@@ -91,13 +91,13 @@ import basicAuth from "express-basic-auth"
     ],
 })
 export class AppModule {
-    // private readonly basicAuthMiddleware = basicAuth({
-    //     users: {
-    //         [envConfig().graphql.adminUsername]: envConfig().graphql.adminPassword,
-    //     },
-    //     challenge: true,
-    // })
-    // configure(consumer: MiddlewareConsumer) {
-    //     consumer.apply(this.basicAuthMiddleware).forRoutes({ path: "/graphql", method: RequestMethod.ALL })
-    // }
+    private readonly basicAuthMiddleware = basicAuth({
+        users: {
+            [envConfig().graphql.adminUsername]: envConfig().graphql.adminPassword,
+        },
+        challenge: true,
+    })
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(this.basicAuthMiddleware).forRoutes({ path: "/graphql", method: RequestMethod.ALL })
+    }
 }
