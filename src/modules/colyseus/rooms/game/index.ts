@@ -13,7 +13,7 @@ export class GameRoom extends AbstractSenderGameRoom {
     maxClients = GAME_ROOM_MAX_CLIENTS
     private static jwtService: JwtEphemeralService | null = null
 
-    private playerHandler: PlayerHandler | null = null
+    protected playerHandler: PlayerHandler | null = null
 
     // Getter method to lazy initialize
     private static getJwtService(): JwtEphemeralService {
