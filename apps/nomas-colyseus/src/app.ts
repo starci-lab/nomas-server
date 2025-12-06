@@ -1,7 +1,7 @@
-import { MiddlewareConsumer, Module, RequestMethod } from "@nestjs/common"
+import { Module } from "@nestjs/common"
 import { GameMongooseModule } from "@modules/databases"
 import { MixinModule } from "@modules/mixin"
-import { envConfig, EnvModule } from "@modules/env"
+import { EnvModule } from "@modules/env"
 import { ThrottlerModule } from "@modules/throttler"
 import { PassportModule } from "@modules/passport"
 import { BlockchainModule } from "@modules/blockchain"
@@ -17,7 +17,6 @@ import { PrometheusModule } from "@modules/prometheus/prometheus.module"
 import { CacheModule } from "@modules/cache"
 import { JwtModule } from "@modules/jwt"
 import { ColyseusCronModule } from "@modules/colyseus-cron"
-import basicAuth from "express-basic-auth"
 
 @Module({
     imports: [
@@ -90,14 +89,4 @@ import basicAuth from "express-basic-auth"
         },
     ],
 })
-export class AppModule {
-    private readonly basicAuthMiddleware = basicAuth({
-        users: {
-            [envConfig().graphql.adminUsername]: envConfig().graphql.adminPassword,
-        },
-        challenge: true,
-    })
-    configure(consumer: MiddlewareConsumer) {
-        consumer.apply(this.basicAuthMiddleware).forRoutes({ path: "/graphql", method: RequestMethod.ALL })
-    }
-}
+export class AppModule {}
