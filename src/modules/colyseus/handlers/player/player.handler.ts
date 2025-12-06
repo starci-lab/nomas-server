@@ -15,11 +15,9 @@ import {
     UpdateSettingsResult,
     UpdateTutorialResult,
 } from "./types"
-import { GameRoomColyseusSchema, PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
 import { PetSyncService } from "../pet/pet-sync.service"
 import { AbstractPetStateGameRoom } from "@modules/colyseus/rooms/game/state-pet.room"
-import { ObjectId } from "mongoose"
-import { PetSchema } from "@modules/databases"
 import { PlayerSyncService } from "./player-sync.service"
 
 /**
@@ -129,43 +127,16 @@ export class PlayerHandler {
                 }
             }
 
-            // 1. Load pets from DB
             const stateRoom = payload.room as unknown as AbstractPetStateGameRoom
-            const dbPets = await this.petSyncService.loadOwnerPetsFromDB(player)
-            this.logger.debug(`Loaded ${dbPets.length} pets from DB`)
-
-            if (dbPets.length === 0) {
-                return {
-                    success: true,
-                    message: "No pets found",
-                    data: { pets: [] },
-                    player,
-                }
-            }
-
-            dbPets.forEach((pet) => {
-                const petSchema = new PetColyseusSchema()
-                petSchema.id = (pet._id as ObjectId).toString()
-                petSchema.ownerId = player.sessionId
-                petSchema.petType = (pet.type as PetSchema).displayId
-                petSchema.lastUpdated = Date.now()
-                petSchema.birthTime = new Date(pet.createdAt).toISOString()
-                petSchema.hunger = pet.hunger
-                petSchema.happiness = pet.happiness
-                petSchema.cleanliness = pet.cleanliness
-                petSchema.lastUpdateHappiness = (pet.lastUpdateHappiness as Date).toISOString()
-                petSchema.lastUpdateHunger = (pet.lastUpdateHunger as Date).toISOString()
-                petSchema.lastUpdateCleanliness = (pet.lastUpdateCleanliness as Date).toISOString()
-                petSchema.isAdult = pet.isAdult
-                petSchema.lastClaim = (pet.lastClaim as Date).toISOString()
-
-                stateRoom.addPetToState(petSchema, player)
-            })
+            const pets = await this.petSyncService.syncPetsStateFromDB(player, stateRoom)
 
             return {
                 success: true,
-                message: `Loaded ${dbPets.length} pets`,
-                data: { pets: dbPets },
+                message: pets.length > 0 ? `Loaded ${pets.length} pets` : "No pets found",
+                data: {
+                    pets,
+                    petsCount: pets.length,
+                },
                 player,
             }
         } catch (error) {
@@ -279,7 +250,6 @@ export class PlayerHandler {
                 this.logger.warn(`Failed to sync player state for ${player.walletAddress}`)
                 return false
             }
-            
 
             return true
         } catch (error) {

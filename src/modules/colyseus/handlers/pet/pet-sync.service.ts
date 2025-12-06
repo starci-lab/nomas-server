@@ -1,7 +1,8 @@
-import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
-import { InjectGameMongoose, OwnedPetSchema, UserSchema } from "@modules/databases"
+import { PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { AbstractPetStateGameRoom } from "@modules/colyseus/rooms/game/state-pet.room"
+import { InjectGameMongoose, OwnedPetSchema, PetSchema, UserSchema } from "@modules/databases"
 import { Injectable, Logger } from "@nestjs/common"
-import { Connection } from "mongoose"
+import { Connection, ObjectId } from "mongoose"
 
 @Injectable()
 export class PetSyncService {
@@ -28,6 +29,49 @@ export class PetSyncService {
             return pets
         } catch (error) {
             this.logger.error(`Failed to load pets from DB: ${error.message}`)
+            return []
+        }
+    }
+
+    /**
+     * Sync pets from DB to colyseus state
+     * @param player - Player colyseus schema
+     * @param stateRoom - Room to add pets to state
+     * @returns Promise<number> - Number of pets synced
+     */
+    async syncPetsStateFromDB(player: PlayerColyseusSchema, stateRoom: AbstractPetStateGameRoom): Promise<Array<OwnedPetSchema>> {
+        try {
+            const dbPets = await this.loadOwnerPetsFromDB(player)
+            this.logger.debug(`Loaded ${dbPets.length} pets from DB for ${player.walletAddress}`)
+
+            if (dbPets.length === 0) {
+                return []
+            }
+
+            dbPets.forEach((pet) => {
+                const petSchema = new PetColyseusSchema()
+                petSchema.id = (pet._id as ObjectId).toString()
+                petSchema.ownerId = player.sessionId
+                petSchema.petType = (pet.type as PetSchema).displayId
+                petSchema.lastUpdated = Date.now()
+                petSchema.birthTime = new Date(pet.createdAt).toISOString()
+                petSchema.hunger = pet.hunger
+                petSchema.happiness = pet.happiness
+                petSchema.cleanliness = pet.cleanliness
+                petSchema.lastUpdateHappiness = (pet.lastUpdateHappiness as Date).toISOString()
+                petSchema.lastUpdateHunger = (pet.lastUpdateHunger as Date).toISOString()
+                petSchema.lastUpdateCleanliness = (pet.lastUpdateCleanliness as Date).toISOString()
+                petSchema.isAdult = pet.isAdult
+                petSchema.lastClaim = (pet.lastClaim as Date).toISOString()
+
+                stateRoom.addPetToState(petSchema, player)
+            })
+
+            return dbPets
+        } catch (error) {
+            this.logger.error(
+                `Failed to sync pets state from DB: ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
             return []
         }
     }

@@ -99,7 +99,7 @@ export interface GetProfileResult {
 export interface GetPetsStateResult {
     success: boolean
     message: string
-    data?: { pets: Array<OwnedPetSchema> }
+    data?: { pets: Array<OwnedPetSchema>; petsCount?: number }
     error?: string
     player?: PlayerColyseusSchema
 }
