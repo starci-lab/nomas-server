@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { AbstractSchema } from "./abstract"
-import { Field, ObjectType } from "@nestjs/graphql"
+import { Field, Int, ObjectType } from "@nestjs/graphql"
 import { GraphQLTypePlatform, Platform } from "@typedefs"
 
 @Schema({
@@ -19,6 +19,13 @@ export class UserSchema extends AbstractSchema {
     })
     @Prop({ type: String, enum: Platform, required: true, default: Platform.Evm })
         platform: Platform
+
+    @Field(() => Int, {
+        description: "The amount of NOM tokens the player has.",
+        nullable: true,
+    })
+    @Prop({ type: Number, required: true, default: 10000 })
+        tokenNom: number
 
     @Field(() => String, {
         description:

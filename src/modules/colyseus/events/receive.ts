@@ -2,6 +2,7 @@ export enum GameActionReceiveMessage {
     BuyPet = "buy_pet",
     GetCatalog = "get_catalog",
     GetInventory = "get_inventory",
+    CreatePoop = "create_poop",
     // Food messages
     BuyFood = "buy_food",
     GetStoreCatalog = "get_store_catalog",
