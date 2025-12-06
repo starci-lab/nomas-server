@@ -46,6 +46,10 @@ jobs:
                   REDIS_CACHE_HOST: ${{ vars.REDIS_CACHE_HOST }}
                   KAFKA_HOST: ${{ vars.KAFKA_HOST }}
                   KAFKA_PORT: ${{ vars.KAFKA_PORT }}
+                  KAFKA_SASL_USERNAME: ${{ vars.KAFKA_SASL_USERNAME }}
+                  KAFKA_SASL_PASSWORD: ${{ vars.KAFKA_SASL_PASSWORD }}
+                  KAFKA_SASL_MECHANISM: ${{ vars.KAFKA_SASL_MECHANISM }}
+                  KAFKA_SASL_ENABLED: ${{ vars.KAFKA_SASL_ENABLED }}
               run: |
                   echo "=== Environment Variables Debug ==="
                   echo "NODE_ENV=${NODE_ENV:-NOT_SET}"
