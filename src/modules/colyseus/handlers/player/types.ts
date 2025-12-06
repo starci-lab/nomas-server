@@ -1,6 +1,7 @@
 import { Client } from "colyseus"
 import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
 import { GameRoom } from "@modules/colyseus/rooms/game"
+import { OwnedPetSchema } from "@modules/databases"
 
 // Base payload types
 export interface PlayerEventBasePayload {
@@ -98,7 +99,7 @@ export interface GetProfileResult {
 export interface GetPetsStateResult {
     success: boolean
     message: string
-    data?: { pets: Array<Record<string, unknown>> }
+    data?: { pets: Array<OwnedPetSchema>; petsCount?: number }
     error?: string
     player?: PlayerColyseusSchema
 }

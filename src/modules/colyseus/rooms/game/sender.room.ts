@@ -373,7 +373,9 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendPetsStateResponse(payload.client, {
             success: payload.result.success,
             message: payload.result.message,
-            data: payload.result.data,
+            data: payload.result.data
+                ? { pets: payload.result.data.pets.map((pet) => pet as unknown as Record<string, unknown>) }
+                : undefined,
             error: payload.result.error,
             timestamp: Date.now(),
         })

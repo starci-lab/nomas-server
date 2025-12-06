@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import {
     GetGameConfigPayload,
     GetPlayerStatePayload,
@@ -16,6 +16,9 @@ import {
     UpdateTutorialResult,
 } from "./types"
 import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { PetSyncService } from "../pet/pet-sync.service"
+import { AbstractPetStateGameRoom } from "@modules/colyseus/rooms/game/state-pet.room"
+import { PlayerSyncService } from "./player-sync.service"
 
 /**
  * Player Handler - Pure business logic layer
@@ -24,9 +27,13 @@ import { GameRoomColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/
 @Injectable()
 export class PlayerHandler {
     private readonly logger = new Logger(PlayerHandler.name)
+    constructor(
+        @Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService,
+        private readonly petSyncService: PetSyncService,
+    ) {}
 
     async handleGetGameConfig(payload: GetGameConfigPayload): Promise<GetGameConfigResult> {
-        this.logger.debug("Handling get game config")
+        this.logger.debug("Handling get game config", { payload })
         try {
             // TODO: Implement get game config logic
             this.logger.warn("Get game config not yet implemented")
@@ -120,13 +127,16 @@ export class PlayerHandler {
                 }
             }
 
-            // TODO: Implement get pets state logic
-            this.logger.warn("Get pets state not yet implemented")
+            const stateRoom = payload.room as unknown as AbstractPetStateGameRoom
+            const pets = await this.petSyncService.syncPetsStateFromDB(player, stateRoom)
 
             return {
                 success: true,
-                message: "Get pets state (placeholder)",
-                data: { pets: [] },
+                message: pets.length > 0 ? `Loaded ${pets.length} pets` : "No pets found",
+                data: {
+                    pets,
+                    petsCount: pets.length,
+                },
                 player,
             }
         } catch (error) {
@@ -232,9 +242,26 @@ export class PlayerHandler {
         }
     }
 
+    async handleSyncPlayerStateOnJoin(player: PlayerColyseusSchema): Promise<boolean> {
+        this.logger.debug(`Syncing player state on join: ${player.walletAddress}`)
+        try {
+            const synced = await this.playerSyncService.syncPlayerStateFromDB(player)
+            if (!synced) {
+                this.logger.warn(`Failed to sync player state for ${player.walletAddress}`)
+                return false
+            }
+
+            return true
+        } catch (error) {
+            this.logger.error(
+                `Failed to sync player state on join: ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
+            return false
+        }
+    }
+
     // Helper methods
     private getPlayer(state: GameRoomColyseusSchema, sessionId: string): PlayerColyseusSchema | undefined {
         return state.players.get(sessionId)
     }
 }
-
