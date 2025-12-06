@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import {
     GetGameConfigPayload,
     GetPlayerStatePayload,
@@ -20,6 +20,7 @@ import { PetSyncService } from "../pet/pet-sync.service"
 import { AbstractPetStateGameRoom } from "@modules/colyseus/rooms/game/state-pet.room"
 import { ObjectId } from "mongoose"
 import { PetSchema } from "@modules/databases"
+import { PlayerSyncService } from "./player-sync.service"
 
 /**
  * Player Handler - Pure business logic layer
@@ -28,7 +29,10 @@ import { PetSchema } from "@modules/databases"
 @Injectable()
 export class PlayerHandler {
     private readonly logger = new Logger(PlayerHandler.name)
-    constructor(private readonly petSyncService: PetSyncService) {}
+    constructor(
+        @Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService,
+        private readonly petSyncService: PetSyncService,
+    ) {}
 
     async handleGetGameConfig(payload: GetGameConfigPayload): Promise<GetGameConfigResult> {
         this.logger.debug("Handling get game config", { payload })
@@ -264,6 +268,25 @@ export class PlayerHandler {
                 message: "Failed to update tutorial",
                 error: error instanceof Error ? error.message : "Unknown error",
             }
+        }
+    }
+
+    async handleSyncPlayerStateOnJoin(player: PlayerColyseusSchema): Promise<boolean> {
+        this.logger.debug(`Syncing player state on join: ${player.walletAddress}`)
+        try {
+            const synced = await this.playerSyncService.syncPlayerStateFromDB(player)
+            if (!synced) {
+                this.logger.warn(`Failed to sync player state for ${player.walletAddress}`)
+                return false
+            }
+            
+
+            return true
+        } catch (error) {
+            this.logger.error(
+                `Failed to sync player state on join: ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
+            return false
         }
     }
 

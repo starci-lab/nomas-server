@@ -13,7 +13,7 @@ export class GameRoom extends AbstractSenderGameRoom {
     maxClients = GAME_ROOM_MAX_CLIENTS
     private static jwtService: JwtEphemeralService | null = null
 
-    protected playerHandler: PlayerHandler | null = null
+    protected playerHandler!: PlayerHandler
 
     // Getter method to lazy initialize
     private static getJwtService(): JwtEphemeralService {
@@ -69,6 +69,9 @@ export class GameRoom extends AbstractSenderGameRoom {
         this.state.playerCount = this.state.players.size
 
         if (this.playerHandler) {
+            await this.playerHandler.handleSyncPlayerStateOnJoin(player)
+
+            // Load pets from DB
             const result = await this.playerHandler.handleGetPetsState({
                 room: this,
                 client,
