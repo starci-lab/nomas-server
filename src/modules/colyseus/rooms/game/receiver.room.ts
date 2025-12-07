@@ -11,6 +11,7 @@ import {
     ReceiveClaimDailyRewardPayload,
     ReceiveUpdateSettingsPayload,
     ReceiveUpdateTutorialPayload,
+    ReceiveEatedFoodPayload,
 } from "@modules/colyseus/events"
 import { Client } from "colyseus"
 import { GamePetEvent, GameFoodEvent, GameInventoryEvent, GamePlayerEvent } from "@modules/colyseus/events"
@@ -19,6 +20,8 @@ import {
     BuyPetResponsePayload,
     CreatePoopPayload,
     CreatePoopResponsePayload,
+    FoodConsumedPayload,
+    FoodConsumedResponsePayload,
 } from "@modules/colyseus/handlers/pet/types"
 import { PetHandler } from "@modules/colyseus/handlers/pet"
 import {
@@ -103,6 +106,31 @@ export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom 
                 this.eventEmitter.emit(GamePetEvent.BuyResponse, responsePayload)
             },
         },
+        {
+            messageType: GameActionReceiveMessage.EatedFood,
+            handler: async (client: Client, data: FoodConsumedPayload) => {
+                if (!this.petHandler) {
+                    this.logger.error("PetHandler not initialized")
+                    return
+                }
+
+                const payload: FoodConsumedPayload = {
+                    room: this as unknown as GameRoom,
+                    client,
+                    sessionId: client.sessionId,
+                    petId: data.petId,
+                    hungerLevel: data.hungerLevel,
+                }
+                const result = await this.petHandler.handleFoodConsumed(payload)
+                const responsePayload: FoodConsumedResponsePayload = {
+                    client,
+                    sessionId: client.sessionId,
+                    result,
+                }
+                this.eventEmitter.emit(GamePetEvent.EatedFoodResponse, responsePayload)
+            },
+        },
+
         {
             messageType: GameActionReceiveMessage.BuyFood,
             handler: async (client: Client, data: ReceiveBuyFoodPayload) => {

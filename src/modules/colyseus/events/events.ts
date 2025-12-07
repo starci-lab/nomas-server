@@ -7,6 +7,8 @@ export enum GamePetEvent {
     FeedRequested = "game.pet.feedRequested",
     PlayRequested = "game.pet.playRequested",
     CleanRequested = "game.pet.cleanRequested",
+    EatedFoodRequested = "game.pet.eatedFoodRequested",
+    EatedFoodResponse = "game.pet.eatedFoodResponse",
     FoodConsumed = "game.pet.foodConsumed",
     Cleaned = "game.pet.cleaned",
     Played = "game.pet.played",

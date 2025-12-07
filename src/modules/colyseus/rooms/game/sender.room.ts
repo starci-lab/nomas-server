@@ -45,6 +45,7 @@ import {
     CleanPetResponsePayload,
     CleanedPetResponsePayload,
     CreatePoopResponsePayload,
+    FoodConsumedResponsePayload,
 } from "@modules/colyseus/handlers/pet/types"
 import {
     GetGameConfigResponsePayload,
@@ -248,6 +249,17 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         if (payload.result.player) {
             this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
         }
+    }
+
+    @OnRoomEvent(GamePetEvent.EatedFoodResponse)
+    onEatedFoodResponse(payload: FoodConsumedResponsePayload) {
+        this.sendActionResponse(payload.client, {
+            success: payload.result?.success ?? false,
+            message: payload.result?.message ?? "",
+            data: payload.result?.data,
+            error: payload.result?.error,
+            timestamp: Date.now(),
+        })
     }
 
     @OnRoomEvent(GamePetEvent.RemoveResponse)

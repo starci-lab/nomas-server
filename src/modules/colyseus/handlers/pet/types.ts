@@ -175,6 +175,17 @@ export interface CreatePoopResult {
     player?: PlayerColyseusSchema
 }
 
+export interface FoodConsumedResult {
+    success: boolean
+    message: string
+    data?: {
+        petId?: string
+        hungerLevel?: number
+    }
+    error?: string
+    player?: PlayerColyseusSchema
+}
+
 // Type for sender room methods
 export type SenderRoom = {
     sendBuyPetResponse: (client: Client, payload: SendBuyPetResponsePayload) => void
@@ -246,4 +257,10 @@ export interface CreatePoopResponsePayload {
     client: Client
     sessionId: string
     result: CreatePoopResult
+}
+
+export interface FoodConsumedResponsePayload {
+    client: Client
+    sessionId: string
+    result: FoodConsumedResult | undefined
 }
