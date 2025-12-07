@@ -256,11 +256,25 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         this.sendActionResponse(payload.client, {
             success: payload.result?.success ?? false,
             message: payload.result?.message ?? "",
-            data: payload.result?.data,
-            error: payload.result?.error,
+            data: payload.result?.data ?? undefined,
+            error: payload.result?.error ?? undefined,
             timestamp: Date.now(),
         })
     }
+
+    // @OnRoomEvent(GamePetEvent.CleanedPetResponse)
+    // onCleanedPetResponse(payload: CleanedPetResponsePayload) {
+    //     this.sendCleanedPetResponse(payload.client, {
+    //         success: payload.result?.success ?? false,
+    //         message: payload.result?.message ?? "",
+    //         data: payload.result?.data ?? undefined,
+    //         error: payload.result?.error ?? undefined,
+    //         timestamp: Date.now(),
+    //     })
+    //     if (payload.result?.player) {
+    //         this.sendPetsStateSync(payload.client, this.mapPetsToSyncPayload(payload.result.player))
+    //     }
+    // }
 
     @OnRoomEvent(GamePetEvent.RemoveResponse)
     onRemovePetResponse(payload: RemovePetResponsePayload) {
@@ -290,7 +304,7 @@ export abstract class AbstractSenderGameRoom extends AbstractReceiverGameRoom {
         }
     }
 
-    @OnRoomEvent(GamePetEvent.PlayResponse)
+    @OnRoomEvent(GamePetEvent.PlayedResponse)
     onPlayPetResponse(payload: PlayPetResponsePayload) {
         this.sendActionResponse(payload.client, {
             success: payload.result.success,
