@@ -50,6 +50,8 @@ services:
             - KAFKA_SASL_MECHANISM=${KAFKA_SASL_MECHANISM}
             - KAFKA_SASL_ENABLED=${KAFKA_SASL_ENABLED}
         restart: unless-stopped
+        networks:
+            - nomas-network
 networks:
     nomas-network:
         external: true
