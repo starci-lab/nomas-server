@@ -72,7 +72,7 @@ export interface GetCatalogResult {
     success: boolean
     message: string
     data?: {
-        catalog: Record<string, { price: number; nutrition: number; name: string }>
+        catalog: Record<string, { price: number; nutrition: number; name: string; description?: string }>
     }
     error?: string
 }

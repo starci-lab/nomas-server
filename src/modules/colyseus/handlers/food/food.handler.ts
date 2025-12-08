@@ -1,7 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from "@nestjs/common"
 import {
     PurchaseFoodPayload,
-    GetCatalogPayload,
     GetFoodInventoryPayload,
     FeedPetWithFoodPayload,
     PurchaseFoodResult,
@@ -9,8 +8,8 @@ import {
     GetFoodInventoryResult,
     FeedPetWithFoodResult,
     StateRoom,
-    FoodItems,
     InventorySummary,
+    GetCatalogPayload,
 } from "./types"
 import {
     GameRoomColyseusSchema,
@@ -18,8 +17,9 @@ import {
     PetColyseusSchema,
     InventoryItemColyseusSchema,
 } from "@modules/colyseus/schemas"
-import { PlayerSyncService } from "../player/player-sync.service"
 import { TrackGameAction } from "@modules/prometheus/decorators"
+import { FoodSyncService } from "./food-sync.service"
+import { MemdbStorageService } from "@modules/databases"
 
 /**
  * Food Handler - Pure business logic layer
@@ -28,27 +28,27 @@ import { TrackGameAction } from "@modules/prometheus/decorators"
 @Injectable()
 export class FoodHandler {
     private readonly logger = new Logger(FoodHandler.name)
-    constructor(@Inject(forwardRef(() => PlayerSyncService)) private readonly playerSyncService: PlayerSyncService) {}
+    constructor(
+        @Inject(forwardRef(() => FoodSyncService)) private readonly foodSyncService: FoodSyncService,
+        private readonly memdbStorageService: MemdbStorageService,
+    ) {}
 
-    // Get food items configuration
-    private getFoodItems(): FoodItems {
-        return {
-            hamburger: { price: 10, nutrition: 20, name: "Hamburger" },
-            apple: { price: 5, nutrition: 10, name: "Apple" },
-            fish: { price: 15, nutrition: 25, name: "Fish" },
-        }
+    // Get food item from DB storage
+    private getFoodItem(itemType: string) {
+        return this.memdbStorageService
+            .getStoreItems()
+            .find((item) => item.displayId.toLocaleLowerCase() === itemType && item.type === "food")
     }
 
     // Get nutrition value for a food type
     private getFoodNutrition(foodType: string): number {
-        const foodItems = this.getFoodItems()
-        return foodItems[foodType]?.nutrition || 10
+        const foodItem = this.getFoodItem(foodType)
+        return foodItem?.effectHunger || 10
     }
 
     // Validate if food type exists
     private isValidFoodType(foodType: string): boolean {
-        const foodItems = this.getFoodItems()
-        return foodType in foodItems
+        return this.getFoodItem(foodType) !== undefined
     }
 
     @TrackGameAction("food_purchased", { labels: ["food_type"], trackDuration: true })
@@ -74,40 +74,35 @@ export class FoodHandler {
                 }
             }
 
-            // Get food item details
-            const foodItem = this.getFoodItems()[payload.itemType]
-            const totalCost = foodItem.price * payload.quantity
+            // Purchase food with transaction (atomic operation with rollback)
+            const result = await this.foodSyncService.purchaseFoodWithTransaction(player, {
+                itemType: payload.itemType,
+                quantity: payload.quantity,
+            })
 
-            // Check if player has enough tokens
-            if (player.tokens < totalCost) {
+            if (!result) {
                 return {
                     success: false,
-                    message: `Not enough tokens. Need ${totalCost}, have ${player.tokens}`,
-                    error: `Not enough tokens. Need ${totalCost}, have ${player.tokens}`,
+                    message: "Failed to purchase food - transaction failed",
+                    error: "Transaction failed, food not found, or not enough tokens",
                     player,
                 }
             }
 
-            // Deduct tokens from player in state
-            player.tokens -= totalCost
+            // Update player tokens in memory state
+            player.tokens = result.newTokenBalance
 
-            // Sync tokens to DB immediately
-            await this.playerSyncService.syncTokensToDB(player).catch((error) => {
-                this.logger.error(`Failed to sync tokens to DB: ${error.message}`)
-            })
-
-            // Add item to inventory
-            const itemId = payload.itemType // Use itemType as itemId for food items
-            this.addItem(player, "food", itemId, payload.itemName || foodItem.name, payload.quantity)
+            // Add item to inventory (in-memory)
+            this.addItem(player, "food", payload.itemType, payload.itemName || result.itemData.name, payload.quantity)
 
             return {
                 success: true,
-                message: `Purchased ${payload.quantity}x ${foodItem.name}`,
+                message: `Purchased ${payload.quantity}x ${result.itemData.name}`,
                 data: {
                     itemType: payload.itemType,
-                    itemName: payload.itemName || foodItem.name,
+                    itemName: payload.itemName || result.itemData.name,
                     quantity: payload.quantity,
-                    totalCost,
+                    totalCost: result.totalCost,
                     newTokenBalance: player.tokens,
                 },
                 player,
@@ -123,9 +118,24 @@ export class FoodHandler {
     }
 
     async handleGetCatalog(payload: GetCatalogPayload): Promise<GetCatalogResult> {
-        this.logger.debug("Handling get catalog")
+        this.logger.debug("Handling get catalog", payload)
         try {
-            const catalog = this.getFoodItems()
+            // Get food items from DB storage
+            const foodItems = this.memdbStorageService.getStoreItems().filter((item) => item.type === "food")
+
+            // Transform to catalog format
+            const catalog = foodItems.reduce(
+                (acc, item) => {
+                    acc[item.displayId] = {
+                        name: item.name,
+                        price: item.costNom,
+                        nutrition: item.effectHunger || 10,
+                        description: item.description,
+                    }
+                    return acc
+                },
+                {} as Record<string, { price: number; nutrition: number; name: string; description?: string }>,
+            )
 
             return {
                 success: true,
