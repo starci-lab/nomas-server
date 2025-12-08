@@ -11,7 +11,6 @@ import {
     ReceiveClaimDailyRewardPayload,
     ReceiveUpdateSettingsPayload,
     ReceiveUpdateTutorialPayload,
-    ReceiveEatedFoodPayload,
 } from "@modules/colyseus/events"
 import { Client } from "colyseus"
 import { GamePetEvent, GameFoodEvent, GameInventoryEvent, GamePlayerEvent } from "@modules/colyseus/events"
