@@ -65,19 +65,20 @@ export class FoodHandler {
             }
 
             // Validate food type
-            if (!this.isValidFoodType(payload.itemType)) {
-                return {
-                    success: false,
-                    message: "Invalid food type",
-                    error: "Invalid food type",
-                    player,
-                }
-            }
+            // if (!this.isValidFoodType(payload.itemType)) {
+            //     return {
+            //         success: false,
+            //         message: "Invalid food type",
+            //         error: "Invalid food type",
+            //         player,
+            //     }
+            // }
 
             // Purchase food with transaction (atomic operation with rollback)
             const result = await this.foodSyncService.purchaseFoodWithTransaction(player, {
-                itemType: payload.itemType,
+                // itemType: payload.itemType,
                 quantity: payload.quantity,
+                displayId: payload.itemName,
             })
 
             if (!result) {

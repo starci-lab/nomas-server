@@ -1,8 +1,12 @@
 export enum GameActionReceiveMessage {
+    // Pet messages
     BuyPet = "buy_pet",
     GetCatalog = "get_catalog",
     GetInventory = "get_inventory",
     CreatePoop = "create_poop",
+    EatedFood = "eated_food",
+    CleanedPet = "cleaned_pet",
+    PlayedPet = "played_pet",
     // Food messages
     BuyFood = "buy_food",
     GetStoreCatalog = "get_store_catalog",
@@ -97,4 +101,9 @@ export interface ReceiveUpdateTutorialPayload {
     step?: string
     completed?: boolean
     progress?: Record<string, unknown>
+}
+
+export interface ReceiveEatedFoodPayload {
+    petId?: string
+    hungerLevel?: number
 }
