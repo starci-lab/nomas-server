@@ -253,7 +253,7 @@ export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom 
         },
         {
             messageType: GameActionReceiveMessage.CreatePoop,
-            handler: async (client: Client, data: any) => {
+            handler: async (client: Client, data: CreatePoopPayload) => {
                 if (!this.petHandler) {
                     this.logger.error("PetHandler not initialized")
                     return

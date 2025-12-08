@@ -1,7 +1,6 @@
 import { Client } from "colyseus"
-import { PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
 import { GameRoom } from "@modules/colyseus/rooms/game"
-import { InventorySummary } from "../inventory/types"
 
 // Base payload types
 export interface FoodEventBasePayload {

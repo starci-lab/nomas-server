@@ -5,6 +5,7 @@ import { GraphQLError } from "graphql"
  */
 export function getResolverSource(error: GraphQLError): string {
     // Nếu originalError có thêm metadata module
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const originalError: any = error.originalError || {}
     if (originalError?.__moduleName) {
         return originalError.__moduleName
