@@ -38,7 +38,7 @@ export class FoodSyncService {
         // 1. Get food item data from memory storage
         const foodItem = this.memdbStorageService
             .getStoreItems()
-            .find((item) => item.displayId === purchaseData.displayId && item.type === "food")
+            .find((item) => item.displayId === purchaseData.displayId)
 
         if (!foodItem) {
             this.logger.error(`Food item not found: ${purchaseData.displayId}`)
