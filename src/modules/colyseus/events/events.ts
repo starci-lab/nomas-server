@@ -7,16 +7,20 @@ export enum GamePetEvent {
     FeedRequested = "game.pet.feedRequested",
     PlayRequested = "game.pet.playRequested",
     CleanRequested = "game.pet.cleanRequested",
+    EatedFoodRequested = "game.pet.eatedFoodRequested",
+    EatedFoodResponse = "game.pet.eatedFoodResponse",
     FoodConsumed = "game.pet.foodConsumed",
+    CleanedPetResponse = "game.pet.cleanedPetResponse",
     Cleaned = "game.pet.cleaned",
     Played = "game.pet.played",
     PoopCreated = "game.pet.poopCreated",
     BuyResponse = "game.pet.buyResponse",
     RemoveResponse = "game.pet.removeResponse",
     FeedResponse = "game.pet.feedResponse",
-    PlayResponse = "game.pet.playResponse",
+    PlayedResponse = "game.pet.playedResponse",
     CleanResponse = "game.pet.cleanResponse",
     CleanedResponse = "game.pet.cleanedResponse",
+
     CreatePoopResponse = "game.pet.createPoopResponse",
 }
 

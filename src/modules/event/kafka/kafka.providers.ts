@@ -17,10 +17,10 @@ export const createKafkaProvider = (): Provider => ({
             ssl: false,
             sasl: envConfig().kafka.sasl.enabled
                 ? {
-                      mechanism: "plain",
-                      username: envConfig().kafka.sasl.username,
-                      password: envConfig().kafka.sasl.password,
-                  }
+                    mechanism: "plain",
+                    username: envConfig().kafka.sasl.username,
+                    password: envConfig().kafka.sasl.password,
+                }
                 : undefined,
         })
     },

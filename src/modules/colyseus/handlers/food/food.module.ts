@@ -1,11 +1,10 @@
 import { Module } from "@nestjs/common"
 import { FoodHandler } from "./food.handler"
+import { FoodSyncService } from "./food-sync.service"
 import { ConfigurableModuleClass } from "./food.module-definition"
-import { PlayerHandlersModule } from "../player/player.module"
 
 @Module({
-    imports: [PlayerHandlersModule],
-    providers: [FoodHandler],
-    exports: [FoodHandler],
+    providers: [FoodHandler, FoodSyncService],
+    exports: [FoodHandler, FoodSyncService],
 })
 export class FoodHandlersModule extends ConfigurableModuleClass {}

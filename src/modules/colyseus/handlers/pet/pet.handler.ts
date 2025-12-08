@@ -17,6 +17,7 @@ import {
     CleanPetResult,
     CleanedPetResult,
     CreatePoopResult,
+    FoodConsumedResult,
 } from "./types"
 import {
     GameRoomColyseusSchema,
@@ -283,7 +284,7 @@ export class PetHandler {
         }
     }
 
-    async handleFoodConsumed(payload: FoodConsumedPayload): Promise<void> {
+    async handleFoodConsumed(payload: FoodConsumedPayload): Promise<FoodConsumedResult | undefined> {
         this.logger.debug(`Handling food consumed: ${payload.petId}`)
         try {
             const { player, pet } = this.getPlayerAndPet(
@@ -292,7 +293,11 @@ export class PetHandler {
                 payload.petId,
             )
             if (!player || !pet) {
-                return
+                return {
+                    success: false,
+                    message: "Cannot eat food",
+                    error: "Cannot eat food",
+                }
             }
 
             const hunger = Math.min(100, Math.max(0, payload.hungerLevel))
@@ -300,6 +305,16 @@ export class PetHandler {
             pet.lastUpdated = Date.now()
 
             this.refreshPlayerPetReference(player, pet)
+            const result: FoodConsumedResult = {
+                success: true,
+                message: "Eated food",
+                data: {
+                    petId: payload.petId,
+                    hungerLevel: hunger,
+                },
+                player,
+            }
+            return result
         } catch (error) {
             this.logger.error(`Failed to handle food consumed: ${error.message}`, error.stack)
         }

@@ -17,8 +17,14 @@ import { GamePetEvent, GameFoodEvent, GameInventoryEvent, GamePlayerEvent } from
 import {
     BuyPetPayload,
     BuyPetResponsePayload,
+    CleanedPetPayload,
+    CleanedPetResponsePayload,
     CreatePoopPayload,
     CreatePoopResponsePayload,
+    FoodConsumedPayload,
+    FoodConsumedResponsePayload,
+    PlayedPetPayload,
+    PlayedPetResponsePayload,
 } from "@modules/colyseus/handlers/pet/types"
 import { PetHandler } from "@modules/colyseus/handlers/pet"
 import {
@@ -104,6 +110,77 @@ export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom 
             },
         },
         {
+            messageType: GameActionReceiveMessage.EatedFood,
+            handler: async (client: Client, data: FoodConsumedPayload) => {
+                if (!this.petHandler) {
+                    this.logger.error("PetHandler not initialized")
+                    return
+                }
+
+                const payload: FoodConsumedPayload = {
+                    room: this as unknown as GameRoom,
+                    client,
+                    sessionId: client.sessionId,
+                    petId: data.petId,
+                    hungerLevel: data.hungerLevel,
+                }
+                const result = await this.petHandler.handleFoodConsumed(payload)
+                const responsePayload: FoodConsumedResponsePayload = {
+                    client,
+                    sessionId: client.sessionId,
+                    result,
+                }
+                this.eventEmitter.emit(GamePetEvent.EatedFoodResponse, responsePayload)
+            },
+        },
+        {
+            messageType: GameActionReceiveMessage.CleanedPet,
+            handler: async (client: Client, data: CleanedPetPayload) => {
+                if (!this.petHandler) {
+                    this.logger.error("PetHandler not initialized")
+                    return
+                }
+                const payload: CleanedPetPayload = {
+                    room: this as unknown as GameRoom,
+                    client,
+                    sessionId: client.sessionId,
+                    petId: data.petId,
+                    cleaningItemId: data.cleaningItemId,
+                    poopId: data.poopId,
+                }
+                const result = await this.petHandler.handleCleanedPet(payload)
+                const responsePayload: CleanedPetResponsePayload = {
+                    client,
+                    sessionId: client.sessionId,
+                    result,
+                }
+                this.eventEmitter.emit(GamePetEvent.CleanedResponse, responsePayload)
+            },
+        },
+        {
+            messageType: GameActionReceiveMessage.PlayedPet,
+            handler: async (client: Client, data: PlayedPetPayload) => {
+                if (!this.petHandler) {
+                    this.logger.error("PetHandler not initialized")
+                    return
+                }
+                const payload: PlayedPetPayload = {
+                    room: this as unknown as GameRoom,
+                    client,
+                    sessionId: client.sessionId,
+                    petId: data.petId,
+                    happinessLevel: data.happinessLevel,
+                }
+                const result = await this.petHandler.handlePlayedPet(payload)
+                const responsePayload: PlayedPetResponsePayload = {
+                    client,
+                    sessionId: client.sessionId,
+                    result,
+                }
+                this.eventEmitter.emit(GamePetEvent.PlayedResponse, responsePayload)
+            },
+        },
+        {
             messageType: GameActionReceiveMessage.BuyFood,
             handler: async (client: Client, data: ReceiveBuyFoodPayload) => {
                 if (!this.foodHandler) {
@@ -176,7 +253,7 @@ export abstract class AbstractReceiverGameRoom extends AbstractPetStateGameRoom 
         },
         {
             messageType: GameActionReceiveMessage.CreatePoop,
-            handler: async (client: Client, data: any) => {
+            handler: async (client: Client, data: CreatePoopPayload) => {
                 if (!this.petHandler) {
                     this.logger.error("PetHandler not initialized")
                     return

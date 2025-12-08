@@ -1,7 +1,6 @@
 import { Client } from "colyseus"
-import { PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
 import { GameRoom } from "@modules/colyseus/rooms/game"
-import { InventorySummary } from "../inventory/types"
 
 // Base payload types
 export interface FoodEventBasePayload {
@@ -72,7 +71,7 @@ export interface GetCatalogResult {
     success: boolean
     message: string
     data?: {
-        catalog: Record<string, { price: number; nutrition: number; name: string }>
+        catalog: Record<string, { price: number; nutrition: number; name: string; description?: string }>
     }
     error?: string
 }
