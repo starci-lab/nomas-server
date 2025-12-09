@@ -4,7 +4,7 @@ import {
     RequestSignatureInput,
     RequestSignatureResponseData,
 } from "./auth.dto"
-import { JwtEphemeralService, JwtPayloadType } from "@modules/jwt"
+import { JwtEphemeralService, JwtPayloadType, JwtRefreshPayloadType } from "@modules/jwt"
 import { NonceService } from "@modules/blockchain"
 import { envConfig } from "@modules/env"
 import { AuthService as BlockchainAuthService } from "@modules/blockchain"
@@ -149,11 +149,48 @@ export class AuthService {
         return payload
     }
 
-    async verifyRefreshToken(refreshToken: string) {
+    async verifyRefreshToken(refreshToken: string): Promise<JwtRefreshPayloadType> {
         try {
             return await this.jwtEphemeralService.verifyToken(refreshToken)
         } catch {
             throw new GraphQLAuthSessionInvalidException("Refresh token is invalid")
+        }
+    }
+
+    async refreshToken(refreshToken: string) {
+        try {
+            /************************************************************
+             * RETRIEVE AND VALIDATE SESSION
+             ************************************************************/
+            const { sessionId, hash } = await this.verifyRefreshToken(refreshToken)
+            const session = await this.connection.model<SessionSchema>(SessionSchema.name).findOne({ _id: sessionId })
+            if (!session || session.hash !== hash) {
+                throw new GraphQLAuthSessionInvalidException("Session is invalid")
+            }
+
+            /************************************************************
+             * RETRIEVE AND VALIDATE USER
+             ************************************************************/
+            const user = await this.connection.model<UserSchema>(UserSchema.name).findOne({ _id: session.user._id })
+            if (!user) {
+                throw new GraphQLAuthSessionInvalidException("User not found")
+            }
+
+            /************************************************************
+             * GENERATE NEW AUTH CREDENTIALS
+             ************************************************************/
+            const newHash = crypto.createHash("sha256").update(randomStringGenerator()).digest("hex")
+
+            return await this.jwtEphemeralService.generateAuthCredentials({
+                userId: user.id,
+                platform: user.platform,
+                userAddress: user.accountAddress,
+                sessionId: session.id,
+                hash: newHash,
+            })
+        } catch (error) {
+            this.logger.debug(error)
+            throw error
         }
     }
 }
