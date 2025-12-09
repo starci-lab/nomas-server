@@ -29,6 +29,7 @@ import { MapSchema } from "@colyseus/schema"
 import { TrackGameAction } from "@modules/prometheus/decorators"
 import { ObjectId } from "mongoose"
 import { PetSyncService } from "./pet-sync.service"
+import { CLEANLINESS_ALLOW_CLEAN } from "../constants"
 
 /**
  * Pet Handler - Pure business logic layer
@@ -324,6 +325,15 @@ export class PetHandler {
     async handleCleanedPet(payload: CleanedPetPayload): Promise<CleanedPetResult> {
         this.logger.debug(`Handling cleaned pet: ${payload.petId}`)
         try {
+            // Validate required parameters
+            if (!payload.petId || !payload.cleaningItemId || !payload.poopId) {
+                return {
+                    success: false,
+                    message: "Missing required parameters",
+                    error: "petId, cleaningItemId, and poopId are required",
+                }
+            }
+
             const { player, pet } = this.getPlayerAndPet(
                 payload.room.state as GameRoomColyseusSchema,
                 payload.sessionId,
@@ -332,27 +342,79 @@ export class PetHandler {
             if (!player || !pet) {
                 return {
                     success: false,
-                    message: "Cannot clean pet",
-                    error: "Cannot clean pet",
+                    message: "Cannot clean pet (invalid player or ownership)",
+                    error: "Player or pet not found",
                 }
             }
 
-            pet.cleanliness = Math.min(100, pet.cleanliness + 40)
-            pet.happiness = Math.min(100, pet.happiness + 15)
+            // Verify ownership
+            if (pet.ownerId !== player.sessionId) {
+                return {
+                    success: false,
+                    message: "Cannot clean pet (invalid ownership)",
+                    error: "You don't own this pet",
+                }
+            }
+
+            // Check cleanliness threshold
+            if (pet.cleanliness > CLEANLINESS_ALLOW_CLEAN) {
+                return {
+                    success: false,
+                    message: `Pet is already clean (${Math.round(pet.cleanliness)}%)`,
+                    error: `Cleanliness must be below ${CLEANLINESS_ALLOW_CLEAN}% to clean`,
+                }
+            }
+
+            // Verify poop exists on this pet
+            const poopExists = pet.poops.some((poop) => poop.id === payload.poopId)
+            if (!poopExists) {
+                return {
+                    success: false,
+                    message: "Poop not found on this pet",
+                    error: `Poop ${payload.poopId} does not belong to pet ${payload.petId}`,
+                }
+            }
+
+            // Clean pet with transaction (atomic operation with rollback)
+            const result = await this.petSyncService.cleanPetWithTransaction(
+                payload.petId,
+                payload.poopId,
+                payload.cleaningItemId,
+                player.walletAddress,
+            )
+
+            if (!result) {
+                return {
+                    success: false,
+                    message: "Failed to clean pet - transaction failed",
+                    error: "Transaction failed, invalid item, not enough tokens, or pet/poop not found",
+                }
+            }
+
+            // Update Colyseus state
+            pet.cleanliness = result.updatedPet.cleanliness
+            pet.happiness = Math.min(100, pet.happiness + 15) // Bonus happiness
             pet.poops = pet.poops.filter((poop) => poop.id !== payload.poopId)
             pet.lastUpdated = Date.now()
+            pet.lastUpdateCleanliness = result.updatedPet.lastUpdateCleanliness.toISOString()
+
+            // Update player tokens in memory
+            player.tokens = result.newTokenBalance
 
             this.refreshPlayerPetReference(player, pet)
 
             return {
                 success: true,
-                message: "Pet cleaned successfully",
+                message: `Pet cleaned successfully! Cleanliness: ${Math.round(result.updatedPet.cleanliness)}% (+${Math.round(result.cleanlinessRestored)}%). Cost: ${result.cost} tokens`,
                 data: {
                     petId: payload.petId,
                     cleaningItemId: payload.cleaningItemId,
-                    cleanliness: pet.cleanliness,
+                    cleanliness: result.updatedPet.cleanliness,
                     happiness: pet.happiness,
                     poopId: payload.poopId,
+                    cleanlinessRestored: result.cleanlinessRestored,
+                    cost: result.cost,
+                    remainingTokens: result.newTokenBalance,
                 },
                 player,
             }
@@ -360,7 +422,7 @@ export class PetHandler {
             this.logger.error(`Failed to handle cleaned pet: ${error.message}`, error.stack)
             return {
                 success: false,
-                message: "Failed to clean pet",
+                message: "An error occurred while cleaning the pet",
                 error: error instanceof Error ? error.message : "Unknown error",
             }
         }
@@ -424,11 +486,36 @@ export class PetHandler {
                 return {
                     success: false,
                     message: "Cannot create poop",
-                    error: "Cannot create poop",
+                    error: "Player or pet not found",
                 }
             }
 
-            const poopId = `${payload.petId}-poop-${Date.now()}`
+            // Verify ownership
+            if (pet.ownerId !== player.sessionId) {
+                return {
+                    success: false,
+                    message: "Cannot create poop",
+                    error: "You don't own this pet",
+                }
+            }
+
+            // Create poop with transaction (saves to DB)
+            const result = await this.petSyncService.createPoopWithTransaction(
+                payload.petId,
+                payload.positionX,
+                payload.positionY,
+            )
+
+            if (!result) {
+                return {
+                    success: false,
+                    message: "Failed to create poop - transaction failed",
+                    error: "Transaction failed or pet not found",
+                }
+            }
+
+            // Update Colyseus state
+            const poopId = result.poop._id?.toString() || `${payload.petId}-poop-${Date.now()}`
             const poop = new PoopColyseusSchema()
             poop.id = poopId
             poop.petId = payload.petId

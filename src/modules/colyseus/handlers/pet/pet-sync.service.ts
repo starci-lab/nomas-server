@@ -1,4 +1,4 @@
-import { PetColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { PetColyseusSchema, PlayerColyseusSchema, PoopColyseusSchema } from "@modules/colyseus/schemas"
 import { AbstractPetStateGameRoom } from "@modules/colyseus/rooms/game/state-pet.room"
 import {
     InjectGameMongoose,
@@ -7,6 +7,8 @@ import {
     PetSchema,
     PetStatus,
     UserSchema,
+    StoreItemSchema,
+    PoopSchema,
 } from "@modules/databases"
 import { Injectable, Logger } from "@nestjs/common"
 import { Connection, ObjectId } from "mongoose"
@@ -18,6 +20,14 @@ export interface BuyPetData {
     defaultHunger: number
     defaultCleanliness: number
     costNom: number
+}
+
+export interface CleanPetTransactionResult {
+    updatedPet: OwnedPetSchema
+    deletedPoop: PoopSchema
+    newTokenBalance: number
+    cleanlinessRestored: number
+    cost: number
 }
 
 @Injectable()
@@ -83,6 +93,18 @@ export class PetSyncService {
                 petSchema.lastUpdateCleanliness = (pet.lastUpdateCleanliness as Date).toISOString()
                 petSchema.isAdult = pet.isAdult
                 petSchema.lastClaim = (pet.lastClaim as Date).toISOString()
+
+                // Load poops from DB
+                if (pet.poops && pet.poops.length > 0) {
+                    petSchema.poops = pet.poops.map((poop) => {
+                        const poopSchema = new PoopColyseusSchema()
+                        poopSchema.id = (poop._id as ObjectId)?.toString() || `poop-${Date.now()}`
+                        poopSchema.petId = petSchema.id
+                        poopSchema.positionX = poop.positionX
+                        poopSchema.positionY = poop.positionY
+                        return poopSchema
+                    })
+                }
 
                 stateRoom.addPetToState(petSchema, player)
             })
@@ -196,6 +218,198 @@ export class PetSyncService {
             await session.abortTransaction()
             this.logger.error(
                 `Failed to buy pet (rolled back): ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
+            return null
+        } finally {
+            session.endSession()
+        }
+    }
+
+    /**
+     * Create poop with transaction
+     * @param petId - Pet ID
+     * @param positionX - X position
+     * @param positionY - Y position
+     * @returns Promise<{ poop: PoopSchema; updatedPet: OwnedPetSchema } | null>
+     */
+    async createPoopWithTransaction(
+        petId: string,
+        positionX: number,
+        positionY: number,
+    ): Promise<{ poop: PoopSchema; updatedPet: OwnedPetSchema } | null> {
+        const session = await this.connection.startSession()
+
+        try {
+            session.startTransaction()
+
+            // 1. Verify pet exists
+            const pet = await this.connection
+                .model<OwnedPetSchema>(OwnedPetSchema.name)
+                .findById(petId)
+                .session(session)
+                .exec()
+
+            if (!pet) {
+                throw new Error(`Pet not found: ${petId}`)
+            }
+
+            // 2. Create poop as subdocument
+            const newPoop: PoopSchema = {
+                positionX: +positionX,
+                positionY: +positionY,
+            } as PoopSchema
+
+            // 3. Add poop to pet's poops array
+            const updatedPet = await this.connection
+                .model<OwnedPetSchema>(OwnedPetSchema.name)
+                .findByIdAndUpdate(petId, { $push: { poops: newPoop } }, { new: true, session })
+                .exec()
+
+            if (!updatedPet) {
+                throw new Error("Failed to add poop to pet")
+            }
+
+            // 4. Commit transaction
+            await session.commitTransaction()
+
+            // Get the last poop (the one we just added)
+            const createdPoop = updatedPet.poops[updatedPet.poops.length - 1]
+
+            this.logger.debug(`Poop created successfully for pet ${petId}`)
+
+            return {
+                poop: createdPoop,
+                updatedPet,
+            }
+        } catch (error) {
+            // Rollback on error
+            await session.abortTransaction()
+            this.logger.error(
+                `Failed to create poop (rolled back): ${error instanceof Error ? error.message : "Unknown error"}`,
+            )
+            return null
+        } finally {
+            session.endSession()
+        }
+    }
+
+    /**
+     * Clean pet with transaction - ensures atomicity
+     * @param petId - Pet ID
+     * @param poopId - Poop ID to remove
+     * @param cleaningItemId - Cleaning item ID from store
+     * @param walletAddress - Player wallet address
+     * @returns Promise<CleanPetTransactionResult | null>
+     */
+    async cleanPetWithTransaction(
+        petId: string,
+        poopId: string,
+        cleaningItemId: string,
+        walletAddress: string,
+    ): Promise<CleanPetTransactionResult | null> {
+        const session = await this.connection.startSession()
+
+        try {
+            session.startTransaction()
+
+            // 1. Get cleaning item from DB
+            const cleaningItem = await this.connection
+                .model<StoreItemSchema>(StoreItemSchema.name)
+                .findOne({ displayId: cleaningItemId })
+                .session(session)
+                .exec()
+
+            if (!cleaningItem || !cleaningItem.effectCleanliness) {
+                throw new Error(`Invalid cleaning item: ${cleaningItemId}`)
+            }
+
+            const cleanlinessRestore = cleaningItem.effectCleanliness
+            const cost = cleaningItem.costNom
+
+            // 2. Get pet from DB
+            const pet = await this.connection
+                .model<OwnedPetSchema>(OwnedPetSchema.name)
+                .findById(petId)
+                .session(session)
+                .exec()
+
+            if (!pet) {
+                throw new Error(`Pet not found: ${petId}`)
+            }
+
+            // 3. Verify poop exists in pet's poops array
+            const poopIndex = pet.poops.findIndex((p) => p._id?.toString() === poopId)
+            if (poopIndex === -1) {
+                throw new Error(`Poop not found on this pet: ${poopId}`)
+            }
+
+            // 4. Calculate new cleanliness (max 100)
+            const newCleanliness = Math.min(pet.cleanliness + cleanlinessRestore, 100)
+
+            // 5. Get user and check tokens
+            const user = await this.connection
+                .model<UserSchema>(UserSchema.name)
+                .findOne({ accountAddress: walletAddress })
+                .session(session)
+                .exec()
+
+            if (!user) {
+                throw new Error(`User not found: ${walletAddress}`)
+            }
+
+            if (user.tokenNom < cost) {
+                throw new Error(`Not enough tokens. Need ${cost}, have ${user.tokenNom}`)
+            }
+
+            // 6. Update pet: set cleanliness, update timestamp, remove poop
+            const updatedPet = await this.connection
+                .model<OwnedPetSchema>(OwnedPetSchema.name)
+                .findByIdAndUpdate(
+                    petId,
+                    {
+                        $set: {
+                            cleanliness: newCleanliness,
+                            lastUpdateCleanliness: new Date(),
+                        },
+                        $pull: { poops: { _id: poopId } },
+                    },
+                    { new: true, session },
+                )
+                .exec()
+
+            if (!updatedPet) {
+                throw new Error("Failed to update pet")
+            }
+
+            // 7. Deduct tokens from user
+            const updatedUser = await this.connection
+                .model<UserSchema>(UserSchema.name)
+                .findOneAndUpdate({ _id: user._id }, { $inc: { tokenNom: -cost } }, { new: true, session })
+                .exec()
+
+            if (!updatedUser) {
+                throw new Error("Failed to update user tokens")
+            }
+
+            // 8. Commit transaction
+            await session.commitTransaction()
+
+            this.logger.debug(
+                `Pet cleaned successfully: ${petId}, cleanliness: ${newCleanliness}, cost: ${cost}, tokens: ${updatedUser.tokenNom}`,
+            )
+
+            return {
+                updatedPet,
+                deletedPoop: pet.poops[poopIndex],
+                newTokenBalance: updatedUser.tokenNom,
+                cleanlinessRestored: cleanlinessRestore,
+                cost,
+            }
+        } catch (error) {
+            // Rollback on error
+            await session.abortTransaction()
+            this.logger.error(
+                `Failed to clean pet (rolled back): ${error instanceof Error ? error.message : "Unknown error"}`,
             )
             return null
         } finally {

@@ -157,6 +157,9 @@ export interface CleanedPetResult {
         cleanliness?: number
         happiness?: number
         poopId?: string
+        cleanlinessRestored?: number
+        cost?: number
+        remainingTokens?: number
     }
     error?: string
     player?: PlayerColyseusSchema
