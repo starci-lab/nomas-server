@@ -39,6 +39,7 @@ export enum StoreItemId {
     Game = "Game",
     Tedy = "Tedy",
     Broom = "Broom",
+    City = "City",
 }
 
 /**

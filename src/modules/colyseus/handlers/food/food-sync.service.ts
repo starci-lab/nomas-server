@@ -1,5 +1,13 @@
 import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
-import { InjectGameMongoose, MemdbStorageService, StoreItemSchema, UserSchema } from "@modules/databases"
+import {
+    InjectGameMongoose,
+    InventoryKind,
+    InventorySchema,
+    MemdbStorageService,
+    StoreItemSchema,
+    StoreItemType,
+    UserSchema,
+} from "@modules/databases"
 import { Injectable, Logger } from "@nestjs/common"
 import { Connection } from "mongoose"
 
@@ -35,17 +43,15 @@ export class FoodSyncService {
         player: PlayerColyseusSchema,
         purchaseData: PurchaseFoodData,
     ): Promise<PurchaseFoodTransactionResult | null> {
-        // 1. Get food item data from memory storage
-        const foodItem = this.memdbStorageService
-            .getStoreItems()
-            .find((item) => item.displayId === purchaseData.displayId)
+        // 1. Get item data from memory storage
+        const item = this.memdbStorageService.getStoreItems().find((item) => item.displayId === purchaseData.displayId)
 
-        if (!foodItem) {
-            this.logger.error(`Food item not found: ${purchaseData.displayId}`)
+        if (!item) {
+            this.logger.error(`Item not found: ${purchaseData.displayId}`)
             return null
         }
 
-        const totalCost = foodItem.costNom * purchaseData.quantity
+        const totalCost = item.costNom * purchaseData.quantity
 
         const session = await this.connection.startSession()
 
@@ -78,19 +84,29 @@ export class FoodSyncService {
                 throw new Error("Failed to update user tokens")
             }
 
-            // 5. TODO: Add inventory record to DB (if you have InventorySchema)
-            // For now, we'll just handle tokens transaction
-            // You can add inventory DB sync here later
+            // 5. Add inventory record to DB (if item is background)
+            if (item.type === StoreItemType.Background) {
+                await this.connection.model<InventorySchema>(InventorySchema.name).create(
+                    [
+                        {
+                            user: user._id,
+                            storeItem: item._id,
+                            kind: InventoryKind.Background,
+                        },
+                    ],
+                    { session },
+                )
+            }
 
             // 6. Commit transaction
             await session.commitTransaction()
 
             this.logger.debug(
-                `Food purchased successfully: ${purchaseData.quantity}x ${foodItem.name} for ${player.walletAddress}, tokens: ${updatedUser.tokenNom}`,
+                `Food purchased successfully: ${purchaseData.quantity}x ${item.name} for ${player.walletAddress}, tokens: ${updatedUser.tokenNom}`,
             )
 
             return {
-                itemData: foodItem,
+                itemData: item,
                 newTokenBalance: updatedUser.tokenNom,
                 totalCost,
             }

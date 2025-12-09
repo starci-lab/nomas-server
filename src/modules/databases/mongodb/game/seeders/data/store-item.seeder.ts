@@ -10,18 +10,6 @@ import { createObjectId } from "@utils"
 
 const data: Array<DeepPartial<StoreItemSchema>> = [
     {
-        _id: createObjectId(StoreItemId.Hamburger),
-        displayId: StoreItemId.Hamburger,
-        name: "Hamburger",
-        type: StoreItemType.Food,
-        description: "High-quality dog food that increases hunger satisfaction",
-        costNom: 50,
-        effectHunger: 20,
-        effectHappiness: 15,
-        effectCleanliness: 10,
-        effectDuration: 60,
-    },
-    {
         _id: createObjectId(StoreItemId.Ball),
         displayId: StoreItemId.Ball,
         name: "Ball",
@@ -40,6 +28,18 @@ const data: Array<DeepPartial<StoreItemSchema>> = [
         type: StoreItemType.Background,
         description: "Sky background",
         costNom: 100,
+        effectHunger: 0,
+        effectHappiness: 0,
+        effectCleanliness: 0,
+        effectDuration: 0,
+    },
+    {
+        _id: createObjectId(StoreItemId.City),
+        displayId: StoreItemId.City,
+        name: "City",
+        type: StoreItemType.Background,
+        description: "City background",
+        costNom: 2000,
         effectHunger: 0,
         effectHappiness: 0,
         effectCleanliness: 0,
@@ -190,16 +190,12 @@ export class StoreItemSeeder implements Seeder {
 
     public async seed(): Promise<void> {
         await this.drop()
-        await this.connection
-            .model<StoreItemSchema>(StoreItemSchema.name)
-            .create(data)
+        await this.connection.model<StoreItemSchema>(StoreItemSchema.name).create(data)
     }
 
     async drop(): Promise<void> {
         try {
-            await this.connection
-                .model<StoreItemSchema>(StoreItemSchema.name)
-                .deleteMany({})
+            await this.connection.model<StoreItemSchema>(StoreItemSchema.name).deleteMany({})
         } catch {
             throw new SeederException("Failed to drop store items")
         }
