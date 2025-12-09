@@ -65,3 +65,10 @@ registerEnumType(GraphQLTypePetName, {
         [PetName.Zombie]: { description: "The name of the Zombie pet" },
     },
 })
+
+export enum InventoryKind {
+    Furniture = "furniture",
+    Background = "background",
+}
+
+export const GraphQLTypeInventoryKind = createEnumType(InventoryKind)

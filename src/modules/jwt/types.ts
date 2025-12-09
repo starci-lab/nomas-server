@@ -4,3 +4,10 @@ export interface JwtPayloadType {
     iat: number
     exp: number
 }
+
+export interface JwtRefreshPayloadType {
+    sessionId: string
+    hash: string
+    iat: number
+    exp: number
+}

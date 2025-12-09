@@ -17,7 +17,10 @@ import {
     VerifyMessageInput,
     VerifyMessageResponse,
     VerifyMessageResponseData,
-} from "@modules/graphql/mutations/game/auth/dto"
+    RefreshTokenInput,
+    RefreshTokenResponse,
+    RefreshTokenResponseData,
+} from "./dto"
 import { TrackGraphQL } from "@modules/prometheus/decorators"
 
 @Resolver()
@@ -53,5 +56,14 @@ export class AuthResolvers {
     @TrackGraphQL({ operationType: "mutation" })
     public async verifyMessage(@Args("input") input: VerifyMessageInput): Promise<VerifyMessageResponseData> {
         return await this.authService.verifyMessage(input)
+    }
+
+    @UseThrottler(ThrottlerConfig.Soft)
+    @GraphQLSuccessMessage("Refresh token refreshed successfully")
+    @UseInterceptors(GraphQLTransformInterceptor)
+    @Mutation(() => RefreshTokenResponse)
+    @TrackGraphQL({ operationType: "mutation" })
+    public async refreshToken(@Args("input") input: RefreshTokenInput): Promise<RefreshTokenResponseData> {
+        return await this.authService.refreshToken(input.refreshToken)
     }
 }
