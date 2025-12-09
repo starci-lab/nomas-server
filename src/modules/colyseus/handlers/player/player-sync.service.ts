@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { PlayerColyseusSchema } from "@modules/colyseus/schemas"
+import { InventoryItemColyseusSchema, PlayerColyseusSchema } from "@modules/colyseus/schemas"
 import { Connection } from "mongoose"
-import { InjectGameMongoose, UserSchema } from "@modules/databases"
+import { InjectGameMongoose, InventorySchema, StoreItemSchema, UserSchema } from "@modules/databases"
 
 /**
  * Player Sync Service - Handles syncing player data to database
@@ -87,6 +87,43 @@ export class PlayerSyncService {
             }
 
             player.tokens = userFromDB.tokenNom
+
+            // Sync inventory state from DB to colyseus schema
+            const inventories = await this.connection
+                .model<InventorySchema>(InventorySchema.name)
+                .find({ user: userFromDB._id })
+                .populate("storeItem")
+                .exec()
+
+            // Clear current in-memory inventory to reflect DB state
+            player.inventory.clear()
+
+            for (const inv of inventories as (InventorySchema & { storeItem: StoreItemSchema })[]) {
+                const storeItem = inv.storeItem as unknown as StoreItemSchema
+                if (!storeItem) continue
+
+                const itemType = storeItem.type as unknown as string
+                const itemId = storeItem.id.toString()
+                const itemName = storeItem.name
+                const quantity = inv.quantity ?? 1
+
+                const itemKey = `${itemType}_${itemId}`
+
+                let inventoryItem = player.inventory.get(itemKey)
+                if (!inventoryItem) {
+                    inventoryItem = new InventoryItemColyseusSchema()
+                    inventoryItem.itemType = itemType
+                    inventoryItem.itemId = itemId
+                    inventoryItem.itemName = itemName
+                    inventoryItem.quantity = 0
+                    inventoryItem.totalPurchased = 0
+                    player.inventory.set(itemKey, inventoryItem)
+                }
+
+                inventoryItem.quantity += quantity
+                inventoryItem.totalPurchased += quantity
+            }
+
             return true
         } catch (error) {
             this.logger.error(
