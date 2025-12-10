@@ -10,11 +10,11 @@ import { GraphQLTypeInventoryKind, InventoryKind } from "@modules/databases/mong
 class PositionSchema {
     @Field(() => Float)
     @Prop({ type: Number, required: false, nullable: true })
-    x?: number
+        x?: number
 
     @Field(() => Float)
     @Prop({ type: Number, required: false, nullable: true })
-    y?: number
+        y?: number
 }
 
 @Schema({ timestamps: true, collection: "inventories" })
@@ -31,13 +31,13 @@ export class InventorySchema extends AbstractSchema {
         ref: UserSchema.name,
         required: true,
     })
-    user: UserSchema | Types.ObjectId
+        user: UserSchema | Types.ObjectId
 
     @Field(() => ID, {
         description: "Reference to the store item that is in the inventory.",
     })
     @Prop({ type: Types.ObjectId, ref: StoreItemSchema.name, required: true })
-    storeItem: StoreItemSchema | Types.ObjectId
+        storeItem: StoreItemSchema | Types.ObjectId
 
     @Field(() => GraphQLTypeInventoryKind, {
         description: "The kind of inventory item.",
@@ -47,7 +47,7 @@ export class InventorySchema extends AbstractSchema {
         enum: InventoryKind,
         required: true,
     })
-    kind: InventoryKind
+        kind: InventoryKind
 
     @Field(() => Int, {
         description: "The quantity of the inventory item.",
@@ -57,7 +57,7 @@ export class InventorySchema extends AbstractSchema {
         required: false,
         nullable: true,
     })
-    quantity?: number
+        quantity?: number
 
     @Field(() => PositionSchema, {
         description: "The position of the inventory item.",
@@ -67,7 +67,7 @@ export class InventorySchema extends AbstractSchema {
         required: false,
         nullable: true,
     })
-    position?: PositionSchema
+        position?: PositionSchema
 }
 
 export const InventorySchemaClass = SchemaFactory.createForClass(InventorySchema)

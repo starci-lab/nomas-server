@@ -65,6 +65,7 @@ export interface PurchaseFoodResult {
     }
     error?: string
     player?: PlayerColyseusSchema
+    newTokenBalance?: number
 }
 
 export interface GetCatalogResult {

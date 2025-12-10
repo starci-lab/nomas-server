@@ -1,6 +1,8 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import {
     RequestColyseusEphemeralJwtResponseData,
+    RequestMessageInput,
+    RequestMessageResponseData,
     RequestSignatureInput,
     RequestSignatureResponseData,
 } from "./auth.dto"
@@ -35,6 +37,13 @@ export class AuthService {
         const jwt = await this.jwtEphemeralService.generateEphemeralJwt({})
         return {
             jwt: jwt,
+        }
+    }
+
+    async requestMessage(input: RequestMessageInput): Promise<RequestMessageResponseData> {
+        const nonceMessage = await this.nonceService.generateNonceMessage(input.platform)
+        return {
+            message: JSON.stringify(nonceMessage),
         }
     }
 

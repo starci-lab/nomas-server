@@ -13,5 +13,5 @@ export class RefreshTokenResponse
     implements IAbstractGraphQLResponse<RefreshTokenResponseData>
 {
     @Field(() => RefreshTokenResponseData, { description: "Data of the response" })
-    data: RefreshTokenResponseData
+        data: RefreshTokenResponseData
 }

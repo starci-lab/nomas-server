@@ -5,10 +5,9 @@ import { IsEnum, IsJWT, IsString } from "class-validator"
 import { GraphQLTypePlatform, Platform } from "@typedefs"
 
 @InputType({
-    isAbstract: true
+    isAbstract: true,
 })
-export class RequestColyseusEphemeralJwtInput extends AbstractSignatureInput {
-}
+export class RequestColyseusEphemeralJwtInput extends AbstractSignatureInput {}
 
 /**
  * GraphQL response type for the request colyseus session ID query.
@@ -16,8 +15,7 @@ export class RequestColyseusEphemeralJwtInput extends AbstractSignatureInput {
 @ObjectType({
     description: "GraphQL response object for requesting a colyseus ephemeral JWT.",
 })
-export class RequestColyseusEphemeralJwtResponseData 
-{
+export class RequestColyseusEphemeralJwtResponseData {
     @Field(() => String, {
         nullable: true,
         description: "The colyseus ephemeral JWT, if the request is successful.",
@@ -31,7 +29,7 @@ export class RequestColyseusEphemeralJwtResponseData
 @ObjectType({
     description: "GraphQL response object for requesting a colyseus ephemeral JWT.",
 })
-export class RequestColyseusEphemeralJwtResponse 
+export class RequestColyseusEphemeralJwtResponse
     extends AbstractGraphQLResponse
     implements IAbstractGraphQLResponse<RequestColyseusEphemeralJwtResponseData>
 {
@@ -43,41 +41,41 @@ export class RequestColyseusEphemeralJwtResponse
 }
 
 @InputType({
-    description: "Input for requesting a signed message for a given platform."
+    description: "Input for requesting a signed message for a given platform.",
 })
 export class RequestSignatureInput {
     @Field(() => GraphQLTypePlatform, {
         nullable: true,
-        description: "The platform to sign the message for. Optional if default platform is used."
+        description: "The platform to sign the message for. Optional if default platform is used.",
     })
     @IsEnum(Platform)
         platform: Platform
 }
 
 @ObjectType({
-    description: "Response object containing the signed message and related cryptographic information."
+    description: "Response object containing the signed message and related cryptographic information.",
 })
 export class RequestSignatureResponseData {
     @Field(() => String, {
-        description: "The signature of the message, if the request is successful."
+        description: "The signature of the message, if the request is successful.",
     })
     @IsJWT()
         signature: string
 
     @Field(() => String, {
-        description: "The original message that was signed."
+        description: "The original message that was signed.",
     })
     @IsString()
         message: string
 
     @Field(() => String, {
-        description: "The public key used to sign the message."
+        description: "The public key used to sign the message.",
     })
     @IsString()
         publicKey: string
 
     @Field(() => String, {
-        description: "The account address associated with the signature."
+        description: "The account address associated with the signature.",
     })
     @IsString()
         accountAddress: string
@@ -86,7 +84,7 @@ export class RequestSignatureResponseData {
 @ObjectType({
     description: "GraphQL response object for requesting a signed message.",
 })
-export class RequestSignatureResponse 
+export class RequestSignatureResponse
     extends AbstractGraphQLResponse
     implements IAbstractGraphQLResponse<RequestSignatureResponseData>
 {
@@ -94,4 +92,40 @@ export class RequestSignatureResponse
         description: "The signed message and related cryptographic information, if the request is successful.",
     })
         data: RequestSignatureResponseData
+}
+
+@InputType({
+    description: "Input for requesting a nonce message for a given platform.",
+})
+export class RequestMessageInput {
+    @Field(() => GraphQLTypePlatform, {
+        nullable: true,
+        description: "The platform to generate the nonce message for. Optional if default platform is used.",
+    })
+    @IsEnum(Platform)
+        platform: Platform
+}
+
+@ObjectType({
+    description: "Response object containing the nonce message.",
+})
+export class RequestMessageResponseData {
+    @Field(() => String, {
+        description: "The nonce message in JSON format, if the request is successful.",
+    })
+    @IsString()
+        message: string
+}
+
+@ObjectType({
+    description: "GraphQL response object for requesting a nonce message.",
+})
+export class RequestMessageResponse
+    extends AbstractGraphQLResponse
+    implements IAbstractGraphQLResponse<RequestMessageResponseData>
+{
+    @Field(() => RequestMessageResponseData, {
+        description: "The nonce message, if the request is successful.",
+    })
+        data: RequestMessageResponseData
 }

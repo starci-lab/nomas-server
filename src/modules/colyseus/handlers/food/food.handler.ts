@@ -107,6 +107,7 @@ export class FoodHandler {
                     newTokenBalance: player.tokens,
                 },
                 player,
+                newTokenBalance: player.tokens,
             }
         } catch (error) {
             this.logger.error(`Failed to handle purchase food: ${error.message}`, error.stack)
