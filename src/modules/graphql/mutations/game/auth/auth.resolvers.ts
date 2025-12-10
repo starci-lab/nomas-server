@@ -1,9 +1,12 @@
-import { Args, Mutation, Resolver } from "@nestjs/graphql"
+import { Args, Mutation, Query, Resolver } from "@nestjs/graphql"
 import { AuthService } from "./auth.service"
 import {
     RequestColyseusEphemeralJwtInput,
     RequestColyseusEphemeralJwtResponse,
     RequestColyseusEphemeralJwtResponseData,
+    RequestMessageInput,
+    RequestMessageResponse,
+    RequestMessageResponseData,
     RequestSignatureInput,
     RequestSignatureResponse,
     RequestSignatureResponseData,
@@ -65,5 +68,14 @@ export class AuthResolvers {
     @TrackGraphQL({ operationType: "mutation" })
     public async refreshToken(@Args("input") input: RefreshTokenInput): Promise<RefreshTokenResponseData> {
         return await this.authService.refreshToken(input.refreshToken)
+    }
+
+    @UseThrottler(ThrottlerConfig.Soft)
+    @GraphQLSuccessMessage("Message requested successfully")
+    @UseInterceptors(GraphQLTransformInterceptor)
+    @Query(() => RequestMessageResponse)
+    @TrackGraphQL({ operationType: "query" })
+    public async requestMessage(@Args("input") input: RequestMessageInput): Promise<RequestMessageResponseData> {
+        return await this.authService.requestMessage(input)
     }
 }

@@ -4,8 +4,7 @@ import { ethers } from "ethers"
 
 @Injectable()
 export class EvmAuthService implements IAuthService {
-    constructor() {
-    }
+    constructor() {}
 
     // verify EVM signature
     /**
@@ -13,11 +12,7 @@ export class EvmAuthService implements IAuthService {
      * @param params - Verify params
      * @returns True if signature is valid, false otherwise
      */
-    async verify({
-        accountAddress,
-        message,
-        signature,
-    }: VerifyParams): Promise<boolean> {
+    async verify({ accountAddress, message, signature }: VerifyParams): Promise<boolean> {
         // verify signature
         const retrievedAddress = ethers.verifyMessage(message, signature)
         // check if recovered address is the same as the account address
@@ -25,14 +20,12 @@ export class EvmAuthService implements IAuthService {
     }
 
     /**
-     * Sign message
-     * @param params - Sign params
-     * @returns Signed message
+     * Server-side helper to sign an EVM message.
+     * @deprecated Avoid handling private keys in the backend; prefer client-side wallet signing.
+     * @param params - EVM sign params (message + private key)
+     * @returns Signed message and derived addresses
      */
-    async sign({
-        privateKey,
-        message,
-    }: SignParams): Promise<SignResponse> {
+    async sign({ privateKey, message }: SignParams): Promise<SignResponse> {
         // sign message
         const signer = new ethers.Wallet(privateKey)
         const signature = await signer.signMessage(message)
