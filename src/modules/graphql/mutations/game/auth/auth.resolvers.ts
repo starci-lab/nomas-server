@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from "@nestjs/graphql"
+import { Args, Mutation, Resolver } from "@nestjs/graphql"
 import { AuthService } from "./auth.service"
 import {
     RequestColyseusEphemeralJwtInput,
@@ -73,8 +73,8 @@ export class AuthResolvers {
     @UseThrottler(ThrottlerConfig.Soft)
     @GraphQLSuccessMessage("Message requested successfully")
     @UseInterceptors(GraphQLTransformInterceptor)
-    @Query(() => RequestMessageResponse)
-    @TrackGraphQL({ operationType: "query" })
+    @Mutation(() => RequestMessageResponse)
+    @TrackGraphQL({ operationType: "mutation" })
     public async requestMessage(@Args("input") input: RequestMessageInput): Promise<RequestMessageResponseData> {
         return await this.authService.requestMessage(input)
     }
