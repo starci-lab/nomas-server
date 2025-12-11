@@ -25,8 +25,6 @@ export const createColyseusServerProvider = (): Provider<Server> => ({
             users: {
                 [envConfig().redis.colyseus.adminUsername]: envConfig().redis.colyseus.adminPassword,
             },
-            // sends WWW-Authenticate header, which will prompt the user to fill
-            // credentials in
             challenge: true,
         })
         app.use("/monitor", basicAuthMiddleware, monitor())
@@ -57,7 +55,6 @@ export const createColyseusServerProvider = (): Provider<Server> => ({
         }
 
         const server = new Server({
-            server: createServer(app),
             transport: new WebSocketTransport({
                 server: createServer(app),
                 pingInterval: 10000,
