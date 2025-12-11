@@ -35,9 +35,6 @@ export class PlayerHandler {
     async handleGetGameConfig(payload: GetGameConfigPayload): Promise<GetGameConfigResult> {
         this.logger.debug("Handling get game config", { payload })
         try {
-            // TODO: Implement get game config logic
-            this.logger.warn("Get game config not yet implemented")
-
             return {
                 success: true,
                 config: {},
@@ -64,9 +61,6 @@ export class PlayerHandler {
                     error: "Player not found in room",
                 }
             }
-
-            // TODO: Implement get player state logic
-            this.logger.warn("Get player state not yet implemented")
 
             return {
                 success: true,

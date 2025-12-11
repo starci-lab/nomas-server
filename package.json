@@ -29,6 +29,8 @@
         "@as-integrations/express5": "^1.1.2",
         "@colyseus/monitor": "^0.16.7",
         "@colyseus/playground": "^0.16.4",
+        "@colyseus/redis-driver": "^0.16.1",
+        "@colyseus/redis-presence": "^0.16.4",
         "@colyseus/schema": "^3.0.68",
         "@keyv/redis": "^5.1.4",
         "@mysten/sui": "^1.44.0",
