@@ -23,6 +23,12 @@ import { ColyseusCronModule } from "@modules/colyseus-cron"
         EnvModule.forRoot({
             isGlobal: true,
         }),
+        WinstonModule.register({
+            appName: "nomas-colyseus",
+            level: WinstonLevel.Info,
+            logTypes: [WinstonLogType.Console, WinstonLogType.Loki],
+            isGlobal: true,
+        }),
         CacheModule.register({
             isGlobal: true,
         }),
@@ -48,7 +54,11 @@ import { ColyseusCronModule } from "@modules/colyseus-cron"
         EventModule.register({
             isGlobal: true,
         }),
-        ColyseusModule.forRoot(),
+        ColyseusModule.forRoot({
+            isGlobal: true,
+            useRedisDriver: true,
+            useRedisPresence: true,
+        }),
         GraphQLModule.register({
             resolvers: {
                 game: true,
@@ -59,12 +69,6 @@ import { ColyseusCronModule } from "@modules/colyseus-cron"
             isGlobal: true,
         }),
         JwtModule.register({
-            isGlobal: true,
-        }),
-        WinstonModule.register({
-            appName: "nomas-colyseus",
-            level: WinstonLevel.Info,
-            logTypes: [WinstonLogType.Console, WinstonLogType.Loki],
             isGlobal: true,
         }),
         SentryModule.register({
