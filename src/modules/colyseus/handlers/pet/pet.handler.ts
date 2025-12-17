@@ -96,7 +96,7 @@ export class PetHandler {
                 pet: newPet,
             }
         } catch (error) {
-            this.logger.error(`Failed to handle buy pet: ${error.message} ... `, error.stack)
+            this.logger.error(`Failed to handle buy pet: ${error.message}`, error.stack)
             return {
                 success: false,
                 message: "Failed to buy pet",
