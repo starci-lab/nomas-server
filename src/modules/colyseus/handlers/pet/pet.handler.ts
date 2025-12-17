@@ -29,7 +29,6 @@ import { MapSchema } from "@colyseus/schema"
 import { TrackGameAction } from "@modules/prometheus/decorators"
 import { ObjectId } from "mongoose"
 import { PetSyncService } from "./pet-sync.service"
-import { CLEANLINESS_ALLOW_CLEAN } from "../constants"
 
 /**
  * Pet Handler - Pure business logic layer
@@ -356,14 +355,14 @@ export class PetHandler {
                 }
             }
 
-            // Check cleanliness threshold
-            if (pet.cleanliness > CLEANLINESS_ALLOW_CLEAN) {
-                return {
-                    success: false,
-                    message: `Pet is already clean (${Math.round(pet.cleanliness)}%)`,
-                    error: `Cleanliness must be below ${CLEANLINESS_ALLOW_CLEAN}% to clean`,
-                }
-            }
+            // ! Deprecated: Check cleanliness threshold
+            // if (pet.cleanliness > CLEANLINESS_ALLOW_CLEAN) {
+            //     return {
+            //         success: false,
+            //         message: `Pet is already clean (${Math.round(pet.cleanliness)}%)`,
+            //         error: `Cleanliness must be below ${CLEANLINESS_ALLOW_CLEAN}% to clean`,
+            //     }
+            // }
 
             // Verify poop exists on this pet
             const poopExists = pet.poops.some((poop) => poop.id === payload.poopId)
