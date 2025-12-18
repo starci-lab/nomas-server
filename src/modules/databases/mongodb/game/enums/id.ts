@@ -6,6 +6,7 @@ export enum PetId {
     KeoneDog = "KeoneDog",
     Ghost = "Ghost",
     Zombie = "Zombie",
+    Bird = "Bird",
 }
 
 export const GraphQLTypePetId = createEnumType(PetId)
@@ -18,6 +19,7 @@ registerEnumType(GraphQLTypePetId, {
         [PetId.KeoneDog]: { description: "The ID of the KeoneDog pet" },
         [PetId.Ghost]: { description: "The ID of the Ghost pet" },
         [PetId.Zombie]: { description: "The ID of the Zombie pet" },
+        [PetId.Bird]: { description: "The ID of the Bird pet" },
     },
 })
 /**
