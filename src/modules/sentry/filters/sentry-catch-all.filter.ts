@@ -1,4 +1,4 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from "@nestjs/common"
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus, Logger } from "@nestjs/common"
 import { SentryExceptionCaptured } from "@sentry/nestjs"
 import { Response } from "express"
 import {
@@ -23,6 +23,8 @@ interface ErrorResponse {
 
 @Catch()
 export class SentryCatchAllExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger(SentryCatchAllExceptionFilter.name)
+
     // sentry will capture the exception
     @SentryExceptionCaptured()
     catch(exception: unknown, host: ArgumentsHost): void {
@@ -85,7 +87,7 @@ export class SentryCatchAllExceptionFilter implements ExceptionFilter {
                 )
             } catch (sendError) {
                 // If sending fails, log it but don't throw
-                console.error("Failed to send error to WebSocket client:", sendError)
+                this.logger.error("Failed to send error to WebSocket client:", sendError)
             }
         }
     }
