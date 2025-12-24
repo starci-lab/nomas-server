@@ -26,7 +26,7 @@ import { ColyseusCronModule } from "@modules/colyseus-cron"
         WinstonModule.register({
             appName: "nomas-colyseus",
             level: WinstonLevel.Info,
-            logTypes: [WinstonLogType.Console, WinstonLogType.Loki],
+            logTypes: [WinstonLogType.Loki],
             isGlobal: true,
         }),
         CacheModule.register({
